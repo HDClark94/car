@@ -21,17 +21,16 @@ def raster(behaviour, save_path, title):
 
     # changes structure so behaviour is organised by trial
     for trial in behaviour:
-        #print(trial)
         trial = np.array(trial)
-        #print(trial[:, 2], "=trial[:,2]")
-        v = [i[1] for i in trial[:, 2]]  # vector of states per time step in trial (velocity)
+
+        v = [i[1] for i in trial[:, 4]]  # vector of states per time step in trial (velocity)
         idx = np.array(np.array(v) == 0.0)  # vector of boolean per time step showing v = 0
-        pos = np.array([i[0] for i in trial[:, 2]])  # vector of positions for which v = 0
+        pos = np.array([i[0] for i in trial[:, 4]])  # vector of positions for which v = 0
         all_trial_stopping.append(pos[idx])  # appendable list of positions for which v = 0
 
     # Draw a spike raster plot
     plt.eventplot(all_trial_stopping, linelengths=1, linewidths=5, color='k')
-    # Provide the title for the spike raster plot
+
     #plt.title(title)
     plt.xlabel('Track Position')
     plt.ylabel('Trial')
@@ -45,5 +44,4 @@ def raster(behaviour, save_path, title):
 
     plt.savefig(save_path+title)
     plt.close()
-    #plot.show();
 

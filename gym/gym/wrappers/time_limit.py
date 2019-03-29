@@ -46,3 +46,6 @@ class TimeLimit(Wrapper):
     def set_obs_error(self, obsError):
         self.env.set_obs_error(obsError)
 
+    def set_action_dim(self, actionDim):
+        self.env.set_action_dim(actionDim)
+

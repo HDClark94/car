@@ -159,9 +159,10 @@ class ACER(ActorCriticRLModel):
         if _init_setup_model:
             self.setup_model()
 
-    def eval_pol(self):
-        env = gym.make("MountainCar-v0")
+    def eval_pol(self, env):
+
         env.set_obs_error(self.action_error_std)
+        env.set_action_dim(self.actiondim)
 
         obs, done = env.reset(), False
         episode_rew = 0
@@ -169,24 +170,25 @@ class ACER(ActorCriticRLModel):
 
         while not done:
             # env.render()
-            # Epsilon-greedy
             if np.random.random() < 0.02:
                 action = env.action_space.sample()
             else:
                 action, _ = self.predict(obs, deterministic=True)
-            obs, rew, done, _ = env.step(action)
+            obs, rew, done, state = env.step(action)
 
             # store log for greedy
-            episode_log.append([action, rew, obs, float(done)])
+            episode_log.append([action, rew, obs, float(done), state])
             episode_rew += rew
 
         self.greedy_rewards.append(episode_rew)
 
+        env.close()
         return episode_log, episode_rew
 
 
     ## evalutat the policy at n steps and produces raster at n steps
     def eval_policy(self, n):
+        #TODO deprecated
         env = gym.make("MountainCar-v0")
         greedy_log = []
         t = 100  # number of trials for greedy policy eval
@@ -220,6 +222,7 @@ class ACER(ActorCriticRLModel):
         self.raster(greedy_log, title)
 
     def raster(self, behaviour, title):
+        # TODO deprecated
     # behaviour is var_log with vector entries [action, rew, obs, float(done), tn]
         
         no_trials = behaviour[-1][4] # picks trial number of last trial (number of trials)
@@ -552,6 +555,7 @@ class ACER(ActorCriticRLModel):
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="ACER",
               reset_num_timesteps=True):
 
+        eval_env = gym.make("MountainCar-v0")
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -639,7 +643,7 @@ class ACER(ActorCriticRLModel):
                 #if(self.num_timesteps%self.evalfreq==0): # evaluate policy every n timesteps
                 #    self.eval_policy(self.num_timesteps)
 
-                ep_log, ep_rew = self.eval_pol()
+                ep_log, ep_rew = self.eval_pol(eval_env)
                 self.eval_steps.append(steps)
                 self.ep_logs.append(ep_log)
                 self.ep_rews.append(ep_rew)

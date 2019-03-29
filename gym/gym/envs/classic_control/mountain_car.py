@@ -50,6 +50,10 @@ class MountainCarEnv(gym.Env):
     def set_obs_error(self, obsError):
         self.obsError = obsError
 
+    def set_action_dim(self, actionDim):
+        self.actiondim = actionDim
+        self.action_space = spaces.Discrete(self.actiondim)
+
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
@@ -90,8 +94,11 @@ class MountainCarEnv(gym.Env):
         self.obs[1] = self.state[1] # velocity is same
         #print(np.array(self.obs), "=np.array(self.obs), ", np.array(self.state), "=np.array(self.state)")
 
-        #return np.array(self.obs), reward, done, {}
-        return np.array(self.state), reward, done, {}
+        #print("np.array(self.obs), reward, done, np.array(self.state) = ", np.array(self.obs), reward, done, np.array(self.state))
+
+        return np.array(self.obs), reward, done, np.array(self.state)
+
+        #return np.array(self.state), reward, done, {}
 
     def reset(self):
         self.state = np.array([-0.6, 0])
