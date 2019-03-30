@@ -10,12 +10,12 @@ from stable_baselines.common.plotting import *
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1]
 
 actionDim = 2
-training_steps = 400000
+training_steps = 2000
 
 print("running acer")
 
 rewards = []
-plot_path = "/home/harry/PycharmProjects/car/figures/acer_bivel/"
+plot_path = '/home/harry/PycharmProjects/car_rl/car/figures/acer_bivel/'
 
 # with error
 # multiprocess environment
@@ -43,7 +43,9 @@ for std in action_errors:
         model.save("acer_mountain")
         std_rewards.append(model.ep_rews)
 
-        raster(model.ep_logs, plot_path, title)
+        # for plotting
+        plot_summary(model.ep_logs, plot_path, title)
+        #raster(model.ep_logs, plot_path, title)
 
         eval_steps = np.array(model.eval_steps)
         del model # remove to demonstrate saving and loading
