@@ -12,6 +12,8 @@ action_errors = [0, 0.0001, 0.001, 0.01, 0.1]
 actionDim = 2
 training_steps = 400000
 
+print("running acer")
+
 rewards = []
 plot_path = "/home/harry/PycharmProjects/car/figures/acer_bivel/"
 
