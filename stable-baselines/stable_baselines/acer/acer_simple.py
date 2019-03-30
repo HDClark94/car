@@ -221,35 +221,6 @@ class ACER(ActorCriticRLModel):
         title = "Policy Raster at " + str(n) + " timesteps"
         self.raster(greedy_log, title)
 
-    def raster(self, behaviour, title):
-        # TODO deprecated
-    # behaviour is var_log with vector entries [action, rew, obs, float(done), tn]
-        
-        no_trials = behaviour[-1][4] # picks trial number of last trial (number of trials)
-        all_trial_stopping = [] # initialise empty list
-
-        # changes structure so behaviour is organised by trial
-        for trial in range(no_trials+1):    
-            trial_log = np.delete(behaviour, np.where(np.array(behaviour)[:, 4] != trial), 0)    # can use this for raster plot
-            v = [i[1] for i in trial_log[:,2]] # vector of states per time step in trial (velocity)
-            idx = np.array(np.array(v)==0.0) # vector of boolean per time step showing v = 0
-            pos = np.array([i[0] for i in trial_log[:,2]]) # vector of positions for which v = 0
-            all_trial_stopping.append(pos[idx]) # appendable list of positions for which v = 0 
-
-        # Draw a spike raster plot
-        plot.eventplot(all_trial_stopping, linelengths=1, linewidths=5, color='k')     
-        # Provide the title for the spike raster plot
-        plot.title(title)
-        plot.xlabel('Track Position')
-        plot.ylabel('Trial')
-        
-        x = [0.4, 0.6, 0.6, 0.4]     # setting fill area for reward zone
-        y = [0, 0, no_trials, no_trials]
-        plot.fill(x,y, color="k", alpha=0.2)
-        
-        plot.ylim([0,no_trials])   
-        plot.xlim([-0.6, 1])  # track limits 
-        plot.show();
 
     def set_env(self, env):
         if env is not None:
