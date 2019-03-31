@@ -170,6 +170,7 @@ class ACER(ActorCriticRLModel):
 
         while not done:
             # env.render()
+            #TODO remove random action selection
             if np.random.random() < 0.02:
                 action = env.action_space.sample()
             else:
@@ -180,46 +181,12 @@ class ACER(ActorCriticRLModel):
             episode_log.append([action, rew, obs, float(done), state])
             episode_rew += rew
 
+        #print(episode_rew, "=episode_rew")
         self.greedy_rewards.append(episode_rew)
 
         env.close()
         return episode_log, episode_rew
 
-
-    ## evalutat the policy at n steps and produces raster at n steps
-    def eval_policy(self, n):
-        #TODO deprecated
-        env = gym.make("MountainCar-v0")
-        greedy_log = []
-        t = 100  # number of trials for greedy policy eval
-        tn = 0   # starting trial number
-        rewards = []
-        while (t>0):
-            obs, done = env.reset(), False
-            episode_rew = 0
-        
-            while not done:
-                #env.render()
-                # Epsilon-greedy
-                if np.random.random() < 0.02:
-                    action = env.action_space.sample()
-                else:
-                    action, _ = self.predict(obs, deterministic=True)
-                obs, rew, done, _ = env.step(action)
-                
-                # store log for greedy
-                greedy_log.append([action, rew, obs, float(done), tn])
-                episode_rew += rew
-            rewards.append(episode_rew)
-                
-            #print("Episode reward", episode_rew)
-            t-=1
-            tn+=1
-       
-        self.greedy_rewards.append(np.mean(rewards))
-        ## plotting raster
-        title = "Policy Raster at " + str(n) + " timesteps"
-        self.raster(greedy_log, title)
 
 
     def set_env(self, env):
@@ -524,9 +491,9 @@ class ACER(ActorCriticRLModel):
         return self.names_ops, step_return[1:]  # strip off _train
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="ACER",
-              reset_num_timesteps=True):
+              reset_num_timesteps=True, eval_env_string=None):
 
-        eval_env = gym.make("MountainCar-v0")
+        eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
