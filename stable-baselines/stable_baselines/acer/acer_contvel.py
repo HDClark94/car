@@ -5,40 +5,64 @@ from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy, MlpLnLstm
 from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines import ACER
 import numpy as np
+from stable_baselines.common.plotting import *
 
-action_errors = [0, 0.0001, 0.001, 0.01, 0.1]
-training_steps = 200000
-evalfreq = 10000
+action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
+
+actionDim = 3
+training_steps = 400000
+
+print("running acer")
+
 rewards = []
+plot_path = '/home/harry/PycharmProjects/car_rl/car/figures/acer_contvel/'
+
+# with error
+# multiprocess environment
+n_cpu = 4
+env_string = 'MountainCarContinuous-v0'
 
 for std in action_errors:
     std_rewards = []
-    for i in range(4):
-        print(std, "=std")
 
-        # with error
-        # multiprocess environment
-        n_cpu = 4
-        env = SubprocVecEnv([lambda: gym.make('MountainCar-v0') for i in range(n_cpu)])
+    # set params for env
+    env = gym.make(env_string)
+    env.set_obs_error(std)
+    env.set_action_dim(actionDim)
+    env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
 
-        model = ACER(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=3, evalfreq=evalfreq)
-        model.learn(total_timesteps=training_steps)
+    for i in range(1):
+        if len(str(std).split("."))>1:
+            std_str = str(std).split(".")[1]
+        else:
+            std_str = str(std)
+        title = "bivel_std=" + std_str + "_i=" + str(i)
+        print("Processing std = ", std)
+
+        model = ACER(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=actionDim)
+        model.learn(total_timesteps=training_steps, eval_env_string=env_string)
         model.save("acer_mountain")
+        std_rewards.append(model.ep_rews)
 
-        std_rewards.append(model.greedy_rewards)
+        # for plotting
+        plot_summary(model.ep_logs, plot_path, title)
+        #raster(model.ep_logs, plot_path, title)
 
+        eval_steps = np.array(model.eval_steps)
         del model # remove to demonstrate saving and loading
+
     rewards.append(std_rewards)
 
+'''
 means = np.mean(np.array(rewards), axis=1)
 stds = np.std(np.array(rewards), axis=1)
 
 for i in range(len(means)):
     std = action_errors[i]
-    plot.errorbar(np.arange(evalfreq,training_steps+evalfreq, evalfreq), means[i], yerr=stds[i], label=str(std))
+    plot.errorbar(eval_steps, means[i], yerr=stds[i], label=str(std))
 
-plot.title('Action Error Assay - Continuous Velocity')
 plot.legend()
 plot.xlabel('Training steps')
 plot.ylabel('Average Episode Returns')
-plot.show()
+plot.savefig(plot_path + 'ActionErrorAssay')
+'''

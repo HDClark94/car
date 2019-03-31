@@ -71,19 +71,11 @@ register(
     reward_threshold=-110.0,
 )
 
-# added continuous velocity version
-register(
-    id='MountainCar-v2',
-    entry_point='gym.envs.classic_control:MountainCarEnv',
-    max_episode_steps=200,
-    reward_threshold=-110.0,
-)
-
 register(
     id='MountainCarContinuous-v0',
     entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
-    max_episode_steps=999,
-    reward_threshold=90.0,
+    max_episode_steps=200,
+    reward_threshold=-110.0,
 )
 
 register(

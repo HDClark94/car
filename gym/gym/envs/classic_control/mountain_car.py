@@ -20,7 +20,7 @@ class MountainCarEnv(gym.Env):
     def __init__(self):
         self.min_position = -1.2
         self.max_position = 1.2
-        self.max_speed = 0.07
+        self.max_speed = 0.2
         self.goal_position = 0.5  # to 1 decimal place
         self.goal_width = 0.2  # to 1 decimal place
         self.hillscale = 0
@@ -70,6 +70,7 @@ class MountainCarEnv(gym.Env):
         self.obs[0] = np.clip(self.obs[0], self.min_position, self.max_position)
 
         velocity = np.clip(velocity, 0, self.max_speed)
+
         position += velocity
         position = np.clip(position, self.min_position, self.max_position)
         if (position==self.min_position and velocity<0): 
@@ -92,6 +93,11 @@ class MountainCarEnv(gym.Env):
         self.state = (position, velocity)
 
         self.obs[1] = self.state[1] # velocity is same
+
+        # for testing! remove this immediately
+        self.obs[1] = np.random.normal(0, 2) # velocity is same
+
+
         #print(np.array(self.obs), "=np.array(self.obs), ", np.array(self.state), "=np.array(self.state)")
 
         #print("np.array(self.obs), reward, done, np.array(self.state) = ", np.array(self.obs), reward, done, np.array(self.state))

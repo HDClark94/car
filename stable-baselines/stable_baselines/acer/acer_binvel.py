@@ -7,10 +7,10 @@ from stable_baselines import ACER
 import numpy as np
 from stable_baselines.common.plotting import *
 
-action_errors = [0, 0.0001, 0.001, 0.01, 0.1]
+action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
 
 actionDim = 2
-training_steps = 2000
+training_steps = 400000
 
 print("running acer")
 
@@ -30,7 +30,7 @@ for std in action_errors:
     env.set_action_dim(actionDim)
     env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
 
-    for i in range(3):
+    for i in range(1):
         if len(str(std).split("."))>1:
             std_str = str(std).split(".")[1]
         else:
@@ -39,8 +39,8 @@ for std in action_errors:
         print("Processing std = ", std)
 
         model = ACER(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=actionDim)
-        model.learn(total_timesteps=training_steps)
-        model.save("acer_mountain")
+        model.learn(total_timesteps=training_steps, eval_env_string='MountainCar-v0')
+        #model.save("acer_mountain")
         std_rewards.append(model.ep_rews)
 
         # for plotting
@@ -52,6 +52,8 @@ for std in action_errors:
 
     rewards.append(std_rewards)
 
+
+'''
 means = np.mean(np.array(rewards), axis=1)
 stds = np.std(np.array(rewards), axis=1)
 
@@ -63,3 +65,4 @@ plot.legend()
 plot.xlabel('Training steps')
 plot.ylabel('Average Episode Returns')
 plot.savefig(plot_path + 'ActionErrorAssay')
+'''

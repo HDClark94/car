@@ -13,8 +13,11 @@ stable_baselines/a2c/a2c.py
 stable_baselines/a2c/run_atari.py
 stable_baselines/a2c/utils.py
 stable_baselines/acer/__init__.py
+stable_baselines/acer/acer_binvel.py
+stable_baselines/acer/acer_contvel.py
 stable_baselines/acer/acer_simple.py
 stable_baselines/acer/buffer.py
+stable_baselines/acer/dqn_binvel.py
 stable_baselines/acer/run_atari.py
 stable_baselines/acer/test.py
 stable_baselines/acktr/__init__.py
@@ -47,6 +50,7 @@ stable_baselines/common/mpi_adam.py
 stable_baselines/common/mpi_fork.py
 stable_baselines/common/mpi_moments.py
 stable_baselines/common/mpi_running_mean_std.py
+stable_baselines/common/plotting.py
 stable_baselines/common/policies.py
 stable_baselines/common/runners.py
 stable_baselines/common/running_mean_std.py

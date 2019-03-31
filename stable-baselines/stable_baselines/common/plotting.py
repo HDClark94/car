@@ -14,11 +14,12 @@ from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
 
 def plot_summary(behaviour, save_path, title):
 
-    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col')
+    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', )
     raster(behaviour, ax1)
     accum_reward(behaviour, ax2)
     speed_of_last(behaviour, ax3)
     average_ep_reward(behaviour, ax4)
+    f.tight_layout()
     #plt.show()
 
     f.savefig(save_path + title)
@@ -26,7 +27,7 @@ def plot_summary(behaviour, save_path, title):
 def average_ep_reward(behaviour, ax=None):
     # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
     # plt.title(title)
-    ax.set(xlabel='Trial', ylabel='Average Reward')
+    ax.set(xlabel='Trial', ylabel='Episode Reward')
 
     no_trials = len(behaviour)
     ax.set_xlim([1, no_trials])
@@ -39,8 +40,12 @@ def average_ep_reward(behaviour, ax=None):
         rews = [i for i in trial[:, 1]]  # vector of reward in trial
         ep_rews.append(np.sum(rews))
 
+    n = 10
+    # plots every n episode rewards to avoid over busy plot
+    ep_rews = np.array(ep_rews)[0::n]
+    every_n = np.arange(1, no_trials + 1)[0::n]
 
-    return ax.plot(np.arange(1,no_trials+1), ep_rews,  color='k')
+    return ax.plot(every_n, ep_rews,  color='k')
 
 
 def accum_reward(behaviour, ax=None):
@@ -69,18 +74,18 @@ def accum_reward(behaviour, ax=None):
 def speed_of_last(behaviour, ax=None):
     # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
     # plt.title(title)
-    ax.set(xlabel='Track Position', ylabel='Trial')
+    ax.set(xlabel='Track Position', ylabel='Speed')
 
     x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
-    y = [0, 0, 0.2, 0.2]
+    y = [0, 0, 0.25, 0.25]
     ax.fill(x, y, color="k", alpha=0.2)
     ax.set_xlim([-0.6, 1])  # track limits
-    ax.set_ylim([0, 0.2])
+    ax.set_ylim([0, 0.25])
 
     last_trial = np.array(behaviour[-1])
 
     v = [i[1] for i in last_trial[:, 4]]  # vector of velocities
-    pos = np.array([i[0] for i in last_trial[:, 4]])  # vector of positions
+    pos = [i[0] for i in last_trial[:, 4]] # vector of positions
 
     return ax.plot(pos, v, color='k')
 
