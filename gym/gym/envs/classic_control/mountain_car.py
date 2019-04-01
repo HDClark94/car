@@ -58,23 +58,14 @@ class MountainCarEnv(gym.Env):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
         position, velocity = self.state
-        if self.hillscale == 0:
-            if self.actiondim == 2:
-                velocity = action*self.velocity_shift      # binary (2 actionspace)
-                self.obs[0] += velocity+(action*np.random.normal(0, self.obsError))
-
-            elif self.actiondim == 3:
-                velocity += (action-1)*self.velocity_shift    # continuous (3 action space)
-                self.obs[0] += velocity+(action-1)*np.random.normal(0, self.obsError)
+        velocity = action*self.velocity_shift      # binary (2 actionspace)
+        self.obs[0] += velocity+(action*np.random.normal(0, self.obsError))
 
         self.obs[0] = np.clip(self.obs[0], self.min_position, self.max_position)
-
         velocity = np.clip(velocity, 0, self.max_speed)
 
         position += velocity
         position = np.clip(position, self.min_position, self.max_position)
-        if (position==self.min_position and velocity<0): 
-            velocity = 0
 
         done= False
         reward = -1
@@ -86,24 +77,17 @@ class MountainCarEnv(gym.Env):
                 #done = True
                 reward = 100
 
-        if(position>(self.goal_position+(self.goal_width*2))):
-            if(self.rewarded):
-                done = True
+        if(position>(self.goal_position+(self.goal_width*2))) and self.rewarded:
+            done = True
 
         self.state = (position, velocity)
 
         self.obs[1] = self.state[1] # velocity is same
 
-        # for testing! remove this immediately
-        self.obs[1] = np.random.normal(0, 2) # velocity is same
-
-
         #print(np.array(self.obs), "=np.array(self.obs), ", np.array(self.state), "=np.array(self.state)")
-
         #print("np.array(self.obs), reward, done, np.array(self.state) = ", np.array(self.obs), reward, done, np.array(self.state))
 
         return np.array(self.obs), reward, done, np.array(self.state)
-
         #return np.array(self.state), reward, done, {}
 
     def reset(self):
