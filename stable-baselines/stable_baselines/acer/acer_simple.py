@@ -12,6 +12,7 @@ from stable_baselines.acer.buffer import Buffer
 from stable_baselines.common import ActorCriticRLModel, tf_util, SetVerbosity, TensorboardWriter
 from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
+from stable_baselines.common.evaluate_policy import *
 
 
 def strip(var, n_envs, n_steps, flat=False):
@@ -100,7 +101,7 @@ class ACER(ActorCriticRLModel):
                  learning_rate=7e-4, lr_schedule='linear', rprop_alpha=0.99, rprop_epsilon=1e-5, buffer_size=5000,
                  replay_ratio=4, replay_start=1000, correction_term=10.0, trust_region=True,
                  alpha=0.99, delta=1, verbose=0, tensorboard_log=None,
-                 _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False, action_error_std=0, evalfreq=10000):
+                 _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False, action_error_std=0):
 
         super(ACER, self).__init__(policy=policy, env=env, verbose=verbose, requires_vec_env=True,
                                    _init_setup_model=_init_setup_model, policy_kwargs=policy_kwargs)
@@ -147,10 +148,8 @@ class ACER(ActorCriticRLModel):
         self.summary = None
         self.episode_reward = None
 
-        self.evalfreq = evalfreq
         self.action_error_std = action_error_std
         self.actiondim = actiondim
-        self.greedy_rewards = []
 
         self.ep_logs = []
         self.ep_rews = []
@@ -158,36 +157,6 @@ class ACER(ActorCriticRLModel):
 
         if _init_setup_model:
             self.setup_model()
-
-    def eval_pol(self, env):
-
-        env.set_obs_error(self.action_error_std)
-        env.set_action_dim(self.actiondim)
-
-        obs, done = env.reset(), False
-        episode_rew = 0
-        episode_log = []
-
-        while not done:
-            # env.render()
-            #TODO remove random action selection
-            if np.random.random() < 0.02:
-                action = env.action_space.sample()
-            else:
-                action, _ = self.predict(obs, deterministic=True)
-            obs, rew, done, state = env.step(action)
-
-            # store log for greedy
-            episode_log.append([action, rew, obs, float(done), state])
-            episode_rew += rew
-
-        #print(episode_rew, "=episode_rew")
-        self.greedy_rewards.append(episode_rew)
-
-        env.close()
-        return episode_log, episode_rew
-
-
 
     def set_env(self, env):
         if env is not None:
@@ -577,11 +546,8 @@ class ACER(ActorCriticRLModel):
                                          self.num_timesteps)
 
                 self.num_timesteps += self.n_batch
-                
-                #if(self.num_timesteps%self.evalfreq==0): # evaluate policy every n timesteps
-                #    self.eval_policy(self.num_timesteps)
 
-                ep_log, ep_rew = self.eval_pol(eval_env)
+                ep_log, ep_rew = evaluate_policy(self, eval_env)
                 self.eval_steps.append(steps)
                 self.ep_logs.append(ep_log)
                 self.ep_rews.append(ep_rew)

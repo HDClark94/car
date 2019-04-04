@@ -12,6 +12,7 @@ from stable_baselines.common.schedules import LinearSchedule
 from stable_baselines.deepq.replay_buffer import ReplayBuffer, PrioritizedReplayBuffer
 from stable_baselines.deepq.policies import DQNPolicy
 from stable_baselines.a2c.utils import find_trainable_variables, total_episode_reward_logger
+from stable_baselines.common.evaluate_policy import *
 
 
 class DQN(OffPolicyRLModel):
@@ -50,7 +51,7 @@ class DQN(OffPolicyRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, gamma=0.99, learning_rate=5e-4, buffer_size=50000, exploration_fraction=0.1,
+    def __init__(self, policy, env, actiondim=2, gamma=0.99, learning_rate=5e-4, buffer_size=50000, exploration_fraction=0.1,
                  exploration_final_eps=0.02, train_freq=1, batch_size=32, checkpoint_freq=10000, checkpoint_path=None,
                  learning_starts=1000, target_network_update_freq=500, prioritized_replay=False,
                  prioritized_replay_alpha=0.6, prioritized_replay_beta0=0.4, prioritized_replay_beta_iters=None,
@@ -80,7 +81,6 @@ class DQN(OffPolicyRLModel):
         self.gamma = gamma
         self.tensorboard_log = tensorboard_log
         self.full_tensorboard_log = full_tensorboard_log
-        self.action_error_std = action_error_std
 
         self.graph = None
         self.sess = None
@@ -95,73 +95,15 @@ class DQN(OffPolicyRLModel):
         self.params = None
         self.summary = None
         self.episode_reward = None
-        self.tn = 0
+        self.action_error_std = action_error_std
+        self.actiondim = actiondim
 
-        self.greedy = []
-        self.var_log = []
+        self.ep_logs = []
+        self.ep_rews = []
+        self.eval_steps = []
 
         if _init_setup_model:
             self.setup_model()
-
-    ## evalutat the policy at n steps and produces raster at n steps
-    def eval_policy(self, n):
-        greedy_log = []
-        t = 100  # number of trials for greedy policy eval
-        tn = 0   # starting trial number
-        while (t>0):
-            obs, done = self.env.reset(), False
-            episode_rew = 0
-        
-            while not done:
-                self.env.render()
-                # Epsilon-greedy
-                if np.random.random() < 0.02:
-                    action = self.env.action_space.sample()
-                else:
-                    action, _ = self.predict(obs, deterministic=True)
-                obs, rew, done, _ = self.env.step(action)
-                
-                # store log for greedy
-                greedy_log.append([action, rew, obs, float(done), tn])
-                episode_rew += rew
-                
-            print("Episode reward", episode_rew)
-            t-=1
-            tn+=1
-       
-        self.greedy.append(greedy_log)
-         ## plotting raster
-        title = "Policy Raster at " + str(n) + " timesteps"
-        self.raster(greedy_log, title)
-
-    def raster(self, behaviour, title):
-    # behaviour is var_log with vector entries [action, rew, obs, float(done), tn]
-        
-        no_trials = behaviour[-1][4] # picks trial number of last trial (number of trials)
-        all_trial_stopping = [] # initialise empty list
-
-        # changes structure so behaviour is organised by trial
-        for trial in range(no_trials+1):    
-            trial_log = np.delete(behaviour, np.where(np.array(behaviour)[:, 4] != trial), 0)    # can use this for raster plot
-            v = [i[1] for i in trial_log[:,2]] # vector of states per time step in trial (velocity)
-            idx = np.array(np.array(v)==0.0) # vector of boolean per time step showing v = 0
-            pos = np.array([i[0] for i in trial_log[:,2]]) # vector of positions for which v = 0
-            all_trial_stopping.append(pos[idx]) # appendable list of positions for which v = 0 
-
-            # Draw a spike raster plot
-        plot.eventplot(all_trial_stopping, linelengths=1, linewidths=5, color='k')     
-        # Provide the title for the spike raster plot
-        plot.title(title)
-        plot.xlabel('Track Position')
-        plot.ylabel('Trial')
-        
-        x = [0.4, 0.6, 0.6, 0.4]     # setting fill area for reward zone
-        y = [0, 0, no_trials, no_trials]
-        plot.fill(x,y, color="k", alpha=0.2)
-        
-        plot.ylim([0,no_trials])   
-        plot.xlim([-0.6, 1])  # track limits 
-        plot.show()
 
 
     def setup_model(self):
@@ -206,7 +148,9 @@ class DQN(OffPolicyRLModel):
                 self.summary = tf.summary.merge_all()
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="DQN",
-              reset_num_timesteps=True):
+              reset_num_timesteps=True, eval_env_string=None):
+
+        eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -235,13 +179,9 @@ class DQN(OffPolicyRLModel):
             episode_rewards = [0.0]
             obs = self.env.reset()
             reset = True
-            action = 0
             self.episode_reward = np.zeros((1,))
 
-            for _ in range(total_timesteps):
-
-                ## add noise to location state if active movement taken
-                obs[0] += (action*np.random.normal(0,self.action_error_std))
+            for steps in range(total_timesteps):
 
                 if callback is not None:
                     # Only stop training if return value is False, not when it is None. This is for backwards
@@ -273,12 +213,6 @@ class DQN(OffPolicyRLModel):
                 # Store transition in the replay buffer.
                 self.replay_buffer.add(obs, action, rew, new_obs, float(done))
 
-
-                # store variables for plotting [action, rew, new_obs, float(done)] 
-                self.var_log.append([action, rew, new_obs, float(done), self.tn])
-
-                if done:
-                    self.tn +=1  # increment trial number after logging
                 obs = new_obs
 
                 if writer is not None:
@@ -345,9 +279,11 @@ class DQN(OffPolicyRLModel):
                                           int(100 * self.exploration.value(self.num_timesteps)))
                     logger.dump_tabular()
 
-                
-                if(self.num_timesteps%5000==0):   # evaluate policy every n timesteps
-                    self.eval_policy(self.num_timesteps)
+                    # evaluate policy and log
+                    ep_log, ep_rew = evaluate_policy(self, eval_env)
+                    self.eval_steps.append(steps)
+                    self.ep_logs.append(ep_log)
+                    self.ep_rews.append(ep_rew)
 
                 self.num_timesteps += 1
 

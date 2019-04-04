@@ -3,27 +3,26 @@ import matplotlib.pyplot as plot
 import gym
 from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy, MlpLnLstmPolicy
 from stable_baselines.common.vec_env import SubprocVecEnv
-from stable_baselines import ACER
+from stable_baselines import A2C
 import numpy as np
 from stable_baselines.common.plotting import *
+import os
+
+dir = os.path.dirname(__file__)
+plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
+actionDim = 2
+training_steps = 4000
 
-actionDim = 3
-training_steps = 400000
-
-print("running acer")
-
-rewards = []
-plot_path = '/home/harry/PycharmProjects/car_rl/car/figures/acer_contvel/'
+print("running A2C")
 
 # with error
 # multiprocess environment
 n_cpu = 4
-env_string = 'MountainCarContinuous-v0'
+env_string = 'MountainCar-v0'
 
 for std in action_errors:
-    std_rewards = []
 
     # set params for env
     env = gym.make(env_string)
@@ -31,7 +30,7 @@ for std in action_errors:
     env.set_action_dim(actionDim)
     env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
 
-    for i in range(1):
+    for i in range(3):
         if len(str(std).split("."))>1:
             std_str = str(std).split(".")[1]
         else:
@@ -39,30 +38,10 @@ for std in action_errors:
         title = "bivel_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = ACER(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=actionDim)
+        model = A2C(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=actionDim)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
-        model.save("acer_mountain")
-        std_rewards.append(model.ep_rews)
 
         # for plotting
         plot_summary(model.ep_logs, plot_path, title)
-        #raster(model.ep_logs, plot_path, title)
 
-        eval_steps = np.array(model.eval_steps)
         del model # remove to demonstrate saving and loading
-
-    rewards.append(std_rewards)
-
-'''
-means = np.mean(np.array(rewards), axis=1)
-stds = np.std(np.array(rewards), axis=1)
-
-for i in range(len(means)):
-    std = action_errors[i]
-    plot.errorbar(eval_steps, means[i], yerr=stds[i], label=str(std))
-
-plot.legend()
-plot.xlabel('Training steps')
-plot.ylabel('Average Episode Returns')
-plot.savefig(plot_path + 'ActionErrorAssay')
-'''

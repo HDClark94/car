@@ -16,6 +16,9 @@ from stable_baselines.a2c.utils import Scheduler, find_trainable_variables, calc
 from stable_baselines.acktr import kfac
 from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
 
+from stable_baselines.common.evaluate_policy import *
+import gym
+
 
 class ACKTR(ActorCriticRLModel):
     """
@@ -43,10 +46,10 @@ class ACKTR(ActorCriticRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, gamma=0.99, nprocs=1, n_steps=20, ent_coef=0.01, vf_coef=0.25, vf_fisher_coef=1.0,
+    def __init__(self, policy, env, actiondim=2, gamma=0.99, nprocs=1, n_steps=20, ent_coef=0.01, vf_coef=0.25, vf_fisher_coef=1.0,
                  learning_rate=0.25, max_grad_norm=0.5, kfac_clip=0.001, lr_schedule='linear', verbose=0,
                  tensorboard_log=None, _init_setup_model=True, async_eigen_decomp=False,
-                 policy_kwargs=None, full_tensorboard_log=False):
+                 policy_kwargs=None, full_tensorboard_log=False, action_error_std=0):
 
         super(ACKTR, self).__init__(policy=policy, env=env, verbose=verbose, requires_vec_env=True,
                                     _init_setup_model=_init_setup_model, policy_kwargs=policy_kwargs)
@@ -96,6 +99,13 @@ class ACKTR(ActorCriticRLModel):
         self.summary = None
         self.episode_reward = None
         self.trained = False
+
+        self.action_error_std = action_error_std
+        self.actiondim = actiondim
+
+        self.ep_logs = []
+        self.ep_rews = []
+        self.eval_steps = []
 
         if _init_setup_model:
             self.setup_model()
@@ -243,7 +253,9 @@ class ACKTR(ActorCriticRLModel):
         return policy_loss, value_loss, policy_entropy
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="ACKTR",
-              reset_num_timesteps=True):
+              reset_num_timesteps=True, eval_env_string=None):
+
+        eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -322,6 +334,12 @@ class ACKTR(ActorCriticRLModel):
                     logger.dump_tabular()
 
                 self.num_timesteps += self.n_batch + 1
+
+                # evaluate policy and log
+                ep_log, ep_rew = evaluate_policy(self, eval_env)
+                self.eval_steps.append(update)
+                self.ep_logs.append(ep_log)
+                self.ep_rews.append(ep_rew)
 
             coord.request_stop()
             coord.join(enqueue_threads)

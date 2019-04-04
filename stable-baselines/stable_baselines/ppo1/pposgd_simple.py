@@ -14,7 +14,8 @@ from stable_baselines.common.mpi_adam import MpiAdam
 from stable_baselines.common.mpi_moments import mpi_moments
 from stable_baselines.trpo_mpi.utils import traj_segment_generator, add_vtarg_and_adv, flatten_lists
 from stable_baselines.a2c.utils import total_episode_reward_logger
-
+from stable_baselines.common.evaluate_policy import *
+import gym
 
 class PPO1(ActorCriticRLModel):
     """
@@ -42,10 +43,10 @@ class PPO1(ActorCriticRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, gamma=0.99, timesteps_per_actorbatch=256, clip_param=0.2, entcoeff=0.01,
+    def __init__(self, policy, env, actiondim=2, gamma=0.99, timesteps_per_actorbatch=256, clip_param=0.2, entcoeff=0.01,
                  optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64, lam=0.95, adam_epsilon=1e-5,
                  schedule='linear', verbose=0, tensorboard_log=None,
-                 _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False):
+                 _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False, action_error_std=0):
 
         super().__init__(policy=policy, env=env, verbose=verbose, requires_vec_env=False,
                          _init_setup_model=_init_setup_model, policy_kwargs=policy_kwargs)
@@ -77,6 +78,13 @@ class PPO1(ActorCriticRLModel):
         self.initial_state = None
         self.summary = None
         self.episode_reward = None
+
+        self.action_error_std = action_error_std
+        self.actiondim = actiondim
+
+        self.ep_logs = []
+        self.ep_rews = []
+        self.eval_steps = []
 
         if _init_setup_model:
             self.setup_model()
@@ -180,7 +188,9 @@ class PPO1(ActorCriticRLModel):
                                                        losses)
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="PPO1",
-              reset_num_timesteps=True):
+              reset_num_timesteps=True, eval_env_string=None):
+
+        eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -322,6 +332,11 @@ class PPO1(ActorCriticRLModel):
                     logger.record_tabular("TimeElapsed", time.time() - t_start)
                     if self.verbose >= 1 and MPI.COMM_WORLD.Get_rank() == 0:
                         logger.dump_tabular()
+
+            ep_log, ep_rew = evaluate_policy(self, eval_env)
+            self.eval_steps.append(steps)
+            self.ep_logs.append(ep_log)
+            self.ep_rews.append(ep_rew)
 
         return self
 

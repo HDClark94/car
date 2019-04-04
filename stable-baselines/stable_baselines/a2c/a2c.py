@@ -11,6 +11,8 @@ from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.a2c.utils import discount_with_dones, Scheduler, find_trainable_variables, mse, \
     total_episode_reward_logger
 
+from stable_baselines.common.evaluate_policy import *
+
 
 class A2C(ActorCriticRLModel):
     """
@@ -39,9 +41,9 @@ class A2C(ActorCriticRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, gamma=0.99, n_steps=5, vf_coef=0.25, ent_coef=0.01, max_grad_norm=0.5,
+    def __init__(self, policy, env, actiondim=2, gamma=0.99, n_steps=5, vf_coef=0.25, ent_coef=0.01, max_grad_norm=0.5,
                  learning_rate=7e-4, alpha=0.99, epsilon=1e-5, lr_schedule='linear', verbose=0, tensorboard_log=None,
-                 _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False):
+                 _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False, action_error_std=0):
 
         super(A2C, self).__init__(policy=policy, env=env, verbose=verbose, requires_vec_env=True,
                                   _init_setup_model=_init_setup_model, policy_kwargs=policy_kwargs)
@@ -79,6 +81,13 @@ class A2C(ActorCriticRLModel):
         self.learning_rate_schedule = None
         self.summary = None
         self.episode_reward = None
+
+        self.action_error_std = action_error_std
+        self.actiondim = actiondim
+
+        self.ep_logs = []
+        self.ep_rews = []
+        self.eval_steps = []
 
         # if we are loading, it is possible the environment is not known, however the obs and action space are known
         if _init_setup_model:
@@ -207,7 +216,9 @@ class A2C(ActorCriticRLModel):
         return policy_loss, value_loss, policy_entropy
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="A2C",
-              reset_num_timesteps=True):
+              reset_num_timesteps=True, eval_env_string=None):
+
+        eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -253,6 +264,12 @@ class A2C(ActorCriticRLModel):
                     logger.record_tabular("value_loss", float(value_loss))
                     logger.record_tabular("explained_variance", float(explained_var))
                     logger.dump_tabular()
+
+                # evaluate policy and log
+                ep_log, ep_rew = evaluate_policy(self, eval_env)
+                self.eval_steps.append(update)
+                self.ep_logs.append(ep_log)
+                self.ep_rews.append(ep_rew)
 
         return self
 

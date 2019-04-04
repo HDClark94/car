@@ -15,7 +15,8 @@ from stable_baselines.common.cg import conjugate_gradient
 from stable_baselines.common.policies import ActorCriticPolicy
 from stable_baselines.a2c.utils import find_trainable_variables, total_episode_reward_logger
 from stable_baselines.trpo_mpi.utils import traj_segment_generator, add_vtarg_and_adv, flatten_lists
-
+from stable_baselines.common.evaluate_policy import *
+import gym
 
 # from stable_baselines.gail.statistics import Stats
 
@@ -42,9 +43,9 @@ class TRPO(ActorCriticRLModel):
     :param full_tensorboard_log: (bool) enable additional logging when using tensorboard
         WARNING: this logging can take a lot of space quickly
     """
-    def __init__(self, policy, env, gamma=0.99, timesteps_per_batch=1024, max_kl=0.01, cg_iters=10, lam=0.98,
+    def __init__(self, policy, env, actiondim=2, gamma=0.99, timesteps_per_batch=1024, max_kl=0.01, cg_iters=10, lam=0.98,
                  entcoeff=0.0, cg_damping=1e-2, vf_stepsize=3e-4, vf_iters=3, verbose=0, tensorboard_log=None,
-                 _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False):
+                 _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False, action_error_std=0):
         super(TRPO, self).__init__(policy=policy, env=env, verbose=verbose, requires_vec_env=False,
                                    _init_setup_model=_init_setup_model, policy_kwargs=policy_kwargs)
 
@@ -97,6 +98,13 @@ class TRPO(ActorCriticRLModel):
         self.params = None
         self.summary = None
         self.episode_reward = None
+
+        self.action_error_std = action_error_std
+        self.actiondim = actiondim
+
+        self.ep_logs = []
+        self.ep_rews = []
+        self.eval_steps = []
 
         if _init_setup_model:
             self.setup_model()
@@ -257,7 +265,9 @@ class TRPO(ActorCriticRLModel):
                                      [self.summary, tf_util.flatgrad(optimgain, var_list)] + losses)
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="TRPO",
-              reset_num_timesteps=True):
+              reset_num_timesteps=True, eval_env_string=None):
+
+        eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -457,6 +467,13 @@ class TRPO(ActorCriticRLModel):
 
                     if self.verbose >= 1 and self.rank == 0:
                         logger.dump_tabular()
+
+            self.num_timesteps += self.n_batch
+
+            ep_log, ep_rew = evaluate_policy(self, eval_env)
+            self.eval_steps.append(steps)
+            self.ep_logs.append(ep_log)
+            self.ep_rews.append(ep_rew)
 
         return self
 
