@@ -59,10 +59,10 @@ class MountainCarEnv(gym.Env):
 
         position, velocity = self.state
         velocity = action*self.velocity_shift      # binary (2 actionspace)
-        self.obs[0] += velocity+(action*np.random.normal(0, self.obsError))
-
-        self.obs[0] = np.clip(self.obs[0], self.min_position, self.max_position)
         velocity = np.clip(velocity, 0, self.max_speed)
+
+        self.obs[0] += velocity+(action*np.random.normal(0, self.obsError))
+        self.obs[0] = np.clip(self.obs[0], self.min_position, self.max_position)
 
         position += velocity
         position = np.clip(position, self.min_position, self.max_position)
@@ -84,11 +84,7 @@ class MountainCarEnv(gym.Env):
 
         self.obs[1] = self.state[1] # velocity is same
 
-        #print(np.array(self.obs), "=np.array(self.obs), ", np.array(self.state), "=np.array(self.state)")
-        #print("np.array(self.obs), reward, done, np.array(self.state) = ", np.array(self.obs), reward, done, np.array(self.state))
-
         return np.array(self.obs), reward, done, np.array(self.state)
-        #return np.array(self.state), reward, done, {}
 
     def reset(self):
         self.state = np.array([-0.6, 0])

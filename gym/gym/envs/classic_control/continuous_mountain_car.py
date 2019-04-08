@@ -31,13 +31,13 @@ class Continuous_MountainCarEnv(gym.Env):
     def __init__(self):
         self.min_position = -1.2
         self.max_position = 1.2
-        self.max_speed = 0.05
+        self.max_speed = 0.2
         self.goal_position = 0.5  # to 1 decimal place
         self.goal_width = 0.2  # to 1 decimal place
         self.hillscale = 0
         self.rewarded = False
         self.rewarded_count = 0
-        self.velocity_shift = 0.05 # Jinghua uses 0.001 shifts for this functional DQN acceleration edition
+        self.velocity_shift = 0.05
         self.obsError = 0
 
         self.low = np.array([self.min_position, -self.max_speed])
@@ -68,13 +68,11 @@ class Continuous_MountainCarEnv(gym.Env):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
         position, velocity = self.state
-
         velocity += (action-1)*self.velocity_shift  # continuous (3 action space)
-        self.obs[0] += velocity + (action-1)*np.random.normal(0, self.obsError)
-
-        self.obs[0] = np.clip(self.obs[0], self.min_position, self.max_position)
-
         velocity = np.clip(velocity, 0, self.max_speed)
+
+        self.obs[0] += velocity + (action-1)*np.random.normal(0, self.obsError)
+        self.obs[0] = np.clip(self.obs[0], self.min_position, self.max_position)
 
         position += velocity
         position = np.clip(position, self.min_position, self.max_position)
@@ -98,11 +96,7 @@ class Continuous_MountainCarEnv(gym.Env):
 
         self.obs[1] = self.state[1]  # velocity is same
 
-        # print(np.array(self.obs), "=np.array(self.obs), ", np.array(self.state), "=np.array(self.state)")
-        # print("np.array(self.obs), reward, done, np.array(self.state) = ", np.array(self.obs), reward, done, np.array(self.state))
-
         return np.array(self.obs), reward, done, np.array(self.state)
-        # return np.array(self.state), reward, done, {}
 
     def reset(self):
         self.state = np.array([-0.6, 0])
