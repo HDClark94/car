@@ -148,7 +148,7 @@ class DQN(OffPolicyRLModel):
                 self.summary = tf.summary.merge_all()
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="DQN",
-              reset_num_timesteps=True, eval_env_string=None):
+              reset_num_timesteps=True, eval_env_string=None, eval_freq=1000):
 
         eval_env = gym.make(eval_env_string)
 
@@ -279,7 +279,8 @@ class DQN(OffPolicyRLModel):
                                           int(100 * self.exploration.value(self.num_timesteps)))
                     logger.dump_tabular()
 
-                    # evaluate policy and log
+                # evaluate policy and log
+                if steps%eval_freq==0:
                     ep_log, ep_rew = evaluate_policy(self, eval_env)
                     self.eval_steps.append(steps)
                     self.ep_logs.append(ep_log)

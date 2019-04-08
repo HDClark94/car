@@ -17,11 +17,7 @@ def evaluate_policy(model, env):
 
     while not done:
         # env.render()
-        # TODO remove random action selection
-        if np.random.random() < 0.02:
-            action = env.action_space.sample()
-        else:
-            action, _ = model.predict(obs, deterministic=True)
+        action, _ = model.predict(obs, deterministic=True)
         obs, rew, done, state = env.step(action)
 
         # store log for greedy

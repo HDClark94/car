@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plot
 #%matplotlib inline
 import gym
-from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy, MlpLnLstmPolicy
+from stable_baselines.deepq.policies import MlpPolicy
 from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import DQN
@@ -14,7 +14,7 @@ plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
 actionDim = 2
-training_steps = 4000
+training_steps = 400000
 
 print("running DQN")
 

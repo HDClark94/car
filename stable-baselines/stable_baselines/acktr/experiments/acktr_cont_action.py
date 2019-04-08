@@ -9,11 +9,11 @@ from stable_baselines.common.plotting import *
 import os
 
 dir = os.path.dirname(__file__)
-plot_path = os.path.join(dir, 'figures', 'binary_action', '')
+plot_path = os.path.join(dir, 'figures', 'continuous_action', '')
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
 actionDim = 3
-training_steps = 4000
+training_steps = 400000
 
 print("running ACKTR")
 

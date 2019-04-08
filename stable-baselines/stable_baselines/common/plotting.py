@@ -14,7 +14,7 @@ from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
 
 def plot_summary(behaviour, save_path, title):
 
-    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', )
+    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', figsize=(50,50))
     raster(behaviour, ax1)
     accum_reward(behaviour, ax2)
     speed_of_last(behaviour, ax3)
@@ -23,6 +23,7 @@ def plot_summary(behaviour, save_path, title):
     #plt.show()
 
     f.savefig(save_path + title)
+
 
 def average_ep_reward(behaviour, ax=None):
     # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
@@ -103,6 +104,7 @@ def raster(behaviour, ax=None):
         idx = np.array(np.array(v) == 0.0)  # vector of boolean per time step showing v = 0
         pos = np.array([i[0] for i in trial[:, 4]])  # vector of positions
         all_trial_stopping.append(pos[idx])  # appendable list of positions for which v = 0
+        print(pos[idx], "=pos[idx]")
 
     #plt.title(title)
     ax.set(xlabel='Track Position', ylabel='Trial')
@@ -114,6 +116,9 @@ def raster(behaviour, ax=None):
     ax.set_ylim([1, no_trials])
     ax.set_xlim([-0.6, 1])  # track limits
 
+    print(np.shape(all_trial_stopping))
+
     # Draw a spike raster plot
-    return ax.eventplot(all_trial_stopping, linelengths=1, linewidths=5, color='k')
+    return ax.eventplot(all_trial_stopping, linewidths=5, color='k')
+
 
