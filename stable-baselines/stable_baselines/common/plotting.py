@@ -92,7 +92,7 @@ def speed_of_last(behaviour, ax=None):
 
 def raster(behaviour, ax=None):
 
-    # behaviour is var_log with vector entries [action, rew, obs, float(done), tn]
+    # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
     no_trials = len(behaviour)
     all_trial_stopping = []    # initialise empty list
 
@@ -101,7 +101,7 @@ def raster(behaviour, ax=None):
         trial = np.array(trial)
 
         v = [i[1] for i in trial[:, 4]]  # vector of states per time step in trial (velocity)
-        idx = np.array(np.array(v) == 0.0)  # vector of boolean per time step showing v = 0
+        idx = np.array(np.round(np.array(v), decimals=3) == 0.0)  # vector of boolean per time step showing v = 0
         pos = np.array([i[0] for i in trial[:, 4]])  # vector of positions
         all_trial_stopping.append(pos[idx])  # appendable list of positions for which v = 0
         #print(pos[idx], "=pos[idx]")
@@ -116,7 +116,8 @@ def raster(behaviour, ax=None):
     ax.set_ylim([1, no_trials])
     ax.set_xlim([-0.6, 1])  # track limits
 
-    #print(np.shape(all_trial_stopping))
+    #print(np.shape(all_trial_stopping), "shape of all_trial_stopping")
+    #print("LAST = ", all_trial_stopping[-1], "  last ", behaviour[-1])
 
     # Draw a spike raster plot
     return ax.eventplot(all_trial_stopping, linewidths=5, color='k')
