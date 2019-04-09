@@ -8,19 +8,18 @@ from stable_baselines import PPO1
 import numpy as np
 from stable_baselines.common.plotting import *
 import os
+from stable_baselines.common.misc_util import set_global_seeds
 
 dir = os.path.dirname(__file__)
-plot_path = os.path.join(dir, 'figures', 'test', '')
+plot_path = os.path.join(dir, 'figures', 'continuous_action', '')
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
 actionDim = 3
 training_steps = 400000
-
+seed = 24601
 print("running PPO1")
 
 # with error
-# multiprocess environment
-n_cpu = 4
 env_string = 'MountainCarContinuous-v0'
 
 for std in action_errors:
@@ -28,7 +27,9 @@ for std in action_errors:
     # set params for env
     env = gym.make(env_string)
     env.set_obs_error(std)
-    env.set_action_dim(actionDim)
+    env.seed(seed)
+    set_global_seeds(seed)
+
     env = DummyVecEnv([lambda: env])
 
     for i in range(3):
