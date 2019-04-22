@@ -11,7 +11,7 @@ import os
 dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
-action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
+action_errors = [0.01, 0.1, 1]
 actionDim = 2
 training_steps = 400000
 

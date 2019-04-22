@@ -37,7 +37,7 @@ for std in action_errors:
             std_str = str(std).split(".")[1]
         else:
             std_str = str(std)
-        title = "bivel_std=" + std_str + "_i=" + str(i)
+        title = "contvel_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
         model = DQN(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=actionDim)

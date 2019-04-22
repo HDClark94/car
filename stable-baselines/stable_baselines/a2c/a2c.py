@@ -11,7 +11,8 @@ from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.a2c.utils import discount_with_dones, Scheduler, find_trainable_variables, mse, \
     total_episode_reward_logger
 
-from stable_baselines.common.evaluate_policy import *
+from stable_baselines.common.evaluate_policy_vecenv import *
+from stable_baselines.common.vec_env import SubprocVecEnv
 
 
 class A2C(ActorCriticRLModel):
@@ -216,9 +217,12 @@ class A2C(ActorCriticRLModel):
         return policy_loss, value_loss, policy_entropy
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="A2C",
-              reset_num_timesteps=True, eval_env_string=None):
+              reset_num_timesteps=True, eval_env_string=None, eval_freq=50):
 
-        eval_env = gym.make(eval_env_string)
+        env = gym.make(eval_env_string)
+        env.set_obs_error(self.action_error_std)
+        env.set_action_dim(self.actiondim)
+        eval_env = SubprocVecEnv([lambda: env for i in range(1)])
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -266,10 +270,11 @@ class A2C(ActorCriticRLModel):
                     logger.dump_tabular()
 
                 # evaluate policy and log
-                ep_log, ep_rew = evaluate_policy(self, eval_env)
-                self.eval_steps.append(update)
-                self.ep_logs.append(ep_log)
-                self.ep_rews.append(ep_rew)
+                if update % eval_freq == 0:
+                    ep_log, ep_rew = evaluate_policy_vecenv(self, eval_env)
+                    self.eval_steps.append(update)
+                    self.ep_logs.append(ep_log)
+                    self.ep_rews.append(ep_rew)
 
         return self
 
