@@ -18,14 +18,14 @@ def evaluate_policy(model, env, seed=None):
 
     while not done:
         # env.render()
-        action, _ = model.predict(obs, deterministic=True)
+        action, _ = model.predict(obs)
         obs, rew, done, state = env.step(action)
 
         # store log for greedy
         episode_log.append([action, rew, obs, float(done), state])
         episode_rew += rew
 
-    print(episode_rew, "=episode reward")
+    #print(episode_rew, "=episode reward")
 
     env.close()
     return episode_log, episode_rew
