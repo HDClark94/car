@@ -71,7 +71,7 @@ class Continuous_MountainCarEnv(gym.Env):
         velocity += (action-1)*self.velocity_shift  # continuous (3 action space)
         velocity = np.clip(velocity, 0, self.max_speed)
 
-        self.obs[0] += velocity + (action-1)*np.random.normal(0, self.obsError)
+        self.obs[0] += velocity + (action-1)*self.np_random.normal(0, self.obsError)
         self.obs[0] = np.clip(self.obs[0], self.min_position, self.max_position)
 
         position += velocity
