@@ -16,7 +16,7 @@ plot_path = os.path.join(dir, 'figures', 'continuous_action', '')
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
 actionDim = 3
 training_steps = 400000
-seed = 24601
+seed = 3
 print("running PPO1")
 
 # with error
@@ -41,7 +41,7 @@ for std in action_errors:
         print("Processing std = ", std)
 
         model = PPO1(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=actionDim)
-        model.learn(total_timesteps=training_steps, eval_env_string=env_string)
+        model.learn(total_timesteps=training_steps, eval_env_string=env_string, seed=seed)
 
         # for plotting
         plot_summary(model.ep_logs, plot_path, title)

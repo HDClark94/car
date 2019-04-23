@@ -1,6 +1,6 @@
 import numpy as np
 
-def evaluate_policy(model, env):
+def evaluate_policy(model, env, seed=None):
     '''
     :param model: stable-baselines policy, valid for environment to be evaluated
     :param env:   open ai gym environment
@@ -9,6 +9,7 @@ def evaluate_policy(model, env):
     '''
 
     env.set_obs_error(model.action_error_std)
+    env.seed(seed)
     env.set_action_dim(model.actiondim)
 
     obs, done = env.reset(), False
@@ -23,6 +24,8 @@ def evaluate_policy(model, env):
         # store log for greedy
         episode_log.append([action, rew, obs, float(done), state])
         episode_rew += rew
+
+    print(episode_rew, "=episode reward")
 
     env.close()
     return episode_log, episode_rew

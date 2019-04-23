@@ -333,7 +333,7 @@ class PPO1(ActorCriticRLModel):
                     if self.verbose >= 1 and MPI.COMM_WORLD.Get_rank() == 0:
                         logger.dump_tabular()
 
-                    ep_log, ep_rew = evaluate_policy(self, eval_env)
+                    ep_log, ep_rew = evaluate_policy(self, eval_env, seed=seed)
                     self.eval_steps.append(steps)
                     self.ep_logs.append(ep_log)
                     self.ep_rews.append(ep_rew)
