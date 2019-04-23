@@ -14,7 +14,7 @@ def evaluate_policy_vecenv(model, env):
     episode_log = []
 
     while not done:
-        action, _ = model.predict(obs)
+        action, _ = model.predict(obs, deterministic=True)
         obs, rew, done, state = env.step(action)
 
         # store log for greedy

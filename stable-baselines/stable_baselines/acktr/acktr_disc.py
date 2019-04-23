@@ -255,7 +255,7 @@ class ACKTR(ActorCriticRLModel):
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="ACKTR",
               reset_num_timesteps=True, eval_env_string=None):
 
-        #eval_env = gym.make(eval_env_string)
+        eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -336,10 +336,10 @@ class ACKTR(ActorCriticRLModel):
                 self.num_timesteps += self.n_batch + 1
 
                 # evaluate policy and log
-                #ep_log, ep_rew = evaluate_policy(self, eval_env)
-                #self.eval_steps.append(update)
-                #self.ep_logs.append(ep_log)
-                #self.ep_rews.append(ep_rew)
+                ep_log, ep_rew = evaluate_policy(self, eval_env)
+                self.eval_steps.append(update)
+                self.ep_logs.append(ep_log)
+                self.ep_rews.append(ep_rew)
 
             coord.request_stop()
             coord.join(enqueue_threads)

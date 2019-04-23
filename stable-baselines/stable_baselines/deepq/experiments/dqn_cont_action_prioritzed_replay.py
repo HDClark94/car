@@ -32,7 +32,7 @@ for std in action_errors:
     env.set_action_dim(actionDim)
     env = DummyVecEnv([lambda: env])
 
-    for i in range(2):
+    for i in range(3):
         if len(str(std).split("."))>1:
             std_str = str(std).split(".")[1]
         else:
