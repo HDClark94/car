@@ -85,6 +85,7 @@ class PPO1(ActorCriticRLModel):
         self.ep_logs = []
         self.ep_rews = []
         self.eval_steps = []
+        self.layer_log = []
 
         if _init_setup_model:
             self.setup_model()
@@ -333,10 +334,11 @@ class PPO1(ActorCriticRLModel):
                     if self.verbose >= 1 and MPI.COMM_WORLD.Get_rank() == 0:
                         logger.dump_tabular()
 
-                    ep_log, ep_rew = evaluate_policy(self, eval_env, seed=seed)
-                    self.eval_steps.append(steps)
+                    ep_log, ep_rew, layer_log = evaluate_policy(self, eval_env, seed=seed)
+                    self.eval_steps.append(timesteps_so_far)
                     self.ep_logs.append(ep_log)
                     self.ep_rews.append(ep_rew)
+                    self.layer_log.append(layer_log)
 
         return self
 

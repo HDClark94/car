@@ -55,7 +55,7 @@ def traj_segment_generator(policy, env, horizon, reward_giver=None, gail=False):
 
     while True:
         prevac = action
-        action, vpred, states, _ = policy.step(observation.reshape(-1, *observation.shape), states, done)
+        action, vpred, states, _, _ = policy.step(observation.reshape(-1, *observation.shape), states, done)
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
         # terminal value
@@ -69,7 +69,7 @@ def traj_segment_generator(policy, env, horizon, reward_giver=None, gail=False):
             yield {"ob": observations, "rew": rews, "dones": dones, "true_rew": true_rews, "vpred": vpreds,
                    "ac": actions, "prevac": prev_actions, "nextvpred": vpred * (1 - new), "ep_rets": ep_rets,
                    "ep_lens": ep_lens, "ep_true_rets": ep_true_rets, "total_timestep": current_it_timesteps}
-            _, vpred, _, _ = policy.step(observation.reshape(-1, *observation.shape))
+            _, vpred, _, _, _ = policy.step(observation.reshape(-1, *observation.shape))
             # Be careful!!! if you change the downstream algorithm to aggregate
             # several of these batches, then be sure to do a deepcopy
             ep_rets = []

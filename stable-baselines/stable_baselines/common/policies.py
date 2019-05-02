@@ -57,11 +57,15 @@ def mlp_extractor(flat_observations, net_arch, act_fun):
     policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network
     value_only_layers = []  # Layer sizes of the network that only belongs to the value network
 
+    layers_list = []
+
     # Iterate through the shared layers and build the shared parts of the network
     for idx, layer in enumerate(net_arch):
         if isinstance(layer, int):  # Check that this is a shared layer
             layer_size = layer
             latent = act_fun(linear(latent, "shared_fc{}".format(idx), layer_size, init_scale=np.sqrt(2)))
+            layers_list.append(latent)
+            print("HEllo there")
         else:
             assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
             if 'pi' in layer:
@@ -80,13 +84,16 @@ def mlp_extractor(flat_observations, net_arch, act_fun):
         if pi_layer_size is not None:
             assert isinstance(pi_layer_size, int), "Error: net_arch[-1]['pi'] must only contain integers."
             latent_policy = act_fun(linear(latent_policy, "pi_fc{}".format(idx), pi_layer_size, init_scale=np.sqrt(2)))
+            layers_list.append(latent_policy)
+            print("HEllo there 1", np.shape(layers_list))
 
         if vf_layer_size is not None:
             assert isinstance(vf_layer_size, int), "Error: net_arch[-1]['vf'] must only contain integers."
             latent_value = act_fun(linear(latent_value, "vf_fc{}".format(idx), vf_layer_size, init_scale=np.sqrt(2)))
+            layers_list.append(latent_value)
+            print("HEllo there 2", np.shape(layers_list))
 
-    return latent_policy, latent_value
-
+    return latent_policy, latent_value, layers_list
 
 class BasePolicy(ABC):
     """
@@ -188,6 +195,21 @@ class ActorCriticPolicy(BasePolicy):
         self.value_fn = None
         self.deterministic_action = None
         self.initial_state = None
+
+    def _setup_init_layers(self, layers_list):
+        """
+        sets up the layers
+        layers_list is a list of tensors in which the layers are order first by iteration through shared layers (policy and value network) and then through non-shared layers
+        policy then value. e.g. layers_list = [Tensor of shared layer policy-value,
+                                               Tensor of non-shared layer 1 of policy network,
+                                               Tensor of non-shared layer 1 of value network,
+                                               Tensor of non-shared layer 2 of policy network,
+                                               Tensor of non-shared layer 2 of policy network,
+        """
+        with tf.variable_scope("layers", reuse=True):
+            self.layers_list = layers_list
+
+            # no idea which layers refer to which at this point
 
     def _setup_init(self):
         """
@@ -433,7 +455,7 @@ class FeedForwardPolicy(ActorCriticPolicy):
             if feature_extraction == "cnn":
                 pi_latent = vf_latent = cnn_extractor(self.processed_obs, **kwargs)
             else:
-                pi_latent, vf_latent = mlp_extractor(tf.layers.flatten(self.processed_obs), net_arch, act_fun)
+                pi_latent, vf_latent, layers_list = mlp_extractor(tf.layers.flatten(self.processed_obs), net_arch, act_fun)
 
             self.value_fn = linear(vf_latent, 'vf', 1)
 
@@ -442,15 +464,20 @@ class FeedForwardPolicy(ActorCriticPolicy):
 
         self.initial_state = None
         self._setup_init()
+        self._setup_init_layers(layers_list)
 
     def step(self, obs, state=None, mask=None, deterministic=False):
         if deterministic:
-            action, value, neglogp = self.sess.run([self.deterministic_action, self._value, self.neglogp],
+            #action, value, neglogp = self.sess.run([self.deterministic_action, self._value, self.neglogp],
+            #                                       {self.obs_ph: obs})
+            action, value, neglogp, layers_list = self.sess.run([self.deterministic_action, self._value, self.neglogp, self.layers_list],
                                                    {self.obs_ph: obs})
         else:
-            action, value, neglogp = self.sess.run([self.action, self._value, self.neglogp],
+            #action, value, neglogp = self.sess.run([self.action, self._value, self.neglogp],
+            #                                                 {self.obs_ph: obs})
+            action, value, neglogp, layers_list = self.sess.run([self.action, self._value, self.neglogp, self.layers_list],
                                                    {self.obs_ph: obs})
-        return action, value, self.initial_state, neglogp
+        return action, value, self.initial_state, neglogp, layers_list
 
     def proba_step(self, obs, state=None, mask=None):
         return self.sess.run(self.policy_proba, {self.obs_ph: obs})
