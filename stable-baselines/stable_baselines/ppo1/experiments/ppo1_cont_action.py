@@ -15,7 +15,7 @@ plot_path = os.path.join(dir, 'figures', 'continuous_action', '')
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
 actionDim = 3
-training_steps = 100000
+training_steps = 200000
 seed = 3
 print("running PPO1")
 
@@ -45,6 +45,6 @@ for std in action_errors:
 
         # for plotting
         plot_summary(model.ep_logs, plot_path, title)
-        print(np.shape(model.layer_log), " = layer log")
+        plot_network_activation(model.layer_log, model.ep_logs, plot_path, title+"_last_trial_layer_")
 
         del model # remove to demonstrate saving and loading
