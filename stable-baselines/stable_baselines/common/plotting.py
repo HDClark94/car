@@ -15,24 +15,29 @@ from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
 def plot_network_activation(layer_behaviour, behaviour, save_path, title):
 
     last_trial_log = np.array(behaviour[-1])
-    v = [i[1] for i in last_trial_log[:, 4]]  # vector of states per time step in trial (velocity)
+    pos = [i[0] for i in last_trial_log[:, 4]] # vector of positions
     last_trial_layers = np.array(layer_behaviour[-1])
 
-    fig_l1, ax_l1 = plt.subplots(8, 8, sharex='col', sharey='row', figsize=(50, 50))
-    fig_l2, ax_l2 = plt.subplots(8, 8, sharex='col', sharey='row', figsize=(50, 50))
-    fig_l3, ax_l3 = plt.subplots(8, 8, sharex='col', sharey='row', figsize=(50, 50))
-    fig_l4, ax_l4 = plt.subplots(8, 8, sharex='col', sharey='row', figsize=(50, 50))
+    fig_l1, ax_l1 = plt.subplots(8, 8, sharex='col', sharey='row', figsize=(20, 20))
+    fig_l2, ax_l2 = plt.subplots(8, 8, sharex='col', sharey='row', figsize=(20, 20))
+    fig_l3, ax_l3 = plt.subplots(8, 8, sharex='col', sharey='row', figsize=(20, 20))
+    fig_l4, ax_l4 = plt.subplots(8, 8, sharex='col', sharey='row', figsize=(20, 20))
 
     count = 0
     for i in range(8):
         for j in range(8):
             activations = last_trial_layers[:, :, :, count]
 
-            ax_l1[i, j].scatter(v, activations[:, 0])
-            ax_l2[i, j].scatter(v, activations[:, 1])
-            ax_l3[i, j].scatter(v, activations[:, 2])
-            ax_l4[i, j].scatter(v, activations[:, 3])
+            ax_l1[i, j].scatter(pos, activations[:, 0])
+            ax_l2[i, j].scatter(pos, activations[:, 1])
+            ax_l3[i, j].scatter(pos, activations[:, 2])
+            ax_l4[i, j].scatter(pos, activations[:, 3])
             count += 1
+
+            ax_l1.set_xlim([-0.6, 1])  # track limits
+            ax_l2.set_xlim([-0.6, 1])  # track limits
+            ax_l3.set_xlim([-0.6, 1])  # track limits
+            ax_l4.set_xlim([-0.6, 1])  # track limits
 
     fig_l1.tight_layout()
     fig_l2.tight_layout()
@@ -43,6 +48,11 @@ def plot_network_activation(layer_behaviour, behaviour, save_path, title):
     fig_l2.savefig(save_path + title + "l2")
     fig_l3.savefig(save_path + title + "l3")
     fig_l4.savefig(save_path + title + "l4")
+
+    fig_l1.gcf()
+    fig_l2.gcf()
+    fig_l3.gcf()
+    fig_l4.gcf()
 
 
 
