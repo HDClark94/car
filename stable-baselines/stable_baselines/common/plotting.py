@@ -78,18 +78,43 @@ def plot_network_activation(layer_behaviour, behaviour, save_path, title):
 
 
 
-def plot_summary(behaviour, save_path, title):
+def plot_summary(behaviour, actions, values, save_path, title):
 
-    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col')
+    # TODO add plots for actions and values of last trial
+
+    f, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(2, 3, sharex='col')
     raster(behaviour, ax1)
     accum_reward(behaviour, ax2)
     speed_of_last(behaviour, ax3)
     average_ep_reward(behaviour, ax4)
+    actions_of_last(behaviour, actions, ax5)
+    value_fn_of_last(behaviour, values, ax6)
     f.tight_layout()
     #plt.show()
 
     f.savefig(save_path + title)
 
+
+def actions_of_last(behaviour, actions, ax=None):
+    ax.set(xlabel="Position", ylabel="Action Selected")
+
+    last_trial = np.array(behaviour[-1])
+    last_trial_actions = np.array(actions[-1])
+
+    pos = [i[0] for i in last_trial[:, 4]]  # vector of positions
+
+    return ax.plot(pos, last_trial_actions, color='k')
+
+
+def value_fn_of_last(behaviour, values, ax=None):
+    ax.set(xlabel="Position", ylabel="Value")
+
+    last_trial = np.array(behaviour[-1])
+    last_trial_values = np.array(values[-1])
+
+    pos = [i[0] for i in last_trial[:, 4]]  # vector of positions
+
+    return ax.plot(pos, last_trial_values, color='k')
 
 def average_ep_reward(behaviour, ax=None):
     # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]

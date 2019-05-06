@@ -13,7 +13,6 @@ dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
-actionDim = 2
 training_steps = 400000
 
 print("running PPO1")
@@ -28,7 +27,6 @@ for std in action_errors:
     # set params for env
     env = gym.make(env_string)
     env.set_obs_error(std)
-    env.set_action_dim(actionDim)
     env = DummyVecEnv([lambda: env])
 
     for i in range(3):
@@ -39,10 +37,11 @@ for std in action_errors:
         title = "bivel_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = PPO1(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=actionDim)
+        model = PPO1(MlpPolicy, env, verbose=0, action_error_std=std)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting
-        plot_summary(model.ep_logs, plot_path, title)
+        plot_summary(model.ep_logs, model.value_log, model.action_log, plot_path, title)
+        plot_network_activation(model.layer_log, model.ep_logs, plot_path, title + "_last_trial_layer_")
 
         del model # remove to demonstrate saving and loading

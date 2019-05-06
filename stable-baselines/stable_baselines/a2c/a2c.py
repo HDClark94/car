@@ -42,7 +42,7 @@ class A2C(ActorCriticRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, actiondim=2, gamma=0.99, n_steps=5, vf_coef=0.25, ent_coef=0.01, max_grad_norm=0.5,
+    def __init__(self, policy, env, gamma=0.99, n_steps=5, vf_coef=0.25, ent_coef=0.01, max_grad_norm=0.5,
                  learning_rate=7e-4, alpha=0.99, epsilon=1e-5, lr_schedule='linear', verbose=0, tensorboard_log=None,
                  _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False, action_error_std=0):
 
@@ -84,7 +84,6 @@ class A2C(ActorCriticRLModel):
         self.episode_reward = None
 
         self.action_error_std = action_error_std
-        self.actiondim = actiondim
 
         self.ep_logs = []
         self.ep_rews = []
@@ -221,7 +220,6 @@ class A2C(ActorCriticRLModel):
 
         env = gym.make(eval_env_string)
         env.set_obs_error(self.action_error_std)
-        env.set_action_dim(self.actiondim)
         eval_env = SubprocVecEnv([lambda: env for i in range(1)])
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)

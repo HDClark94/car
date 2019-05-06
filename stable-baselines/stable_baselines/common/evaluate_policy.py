@@ -16,18 +16,23 @@ def evaluate_policy(model, env, seed=None):
     episode_rew = 0
     episode_log = []
     layer_log = []
+    action_log = []
+    value_log = []
+    output_log = []
 
     while not done:
         # env.render()
-        action, _, layers_list = model.predict(obs, deterministic=True)
+        action, _, layers_list, value = model.predict(obs, deterministic=True)
         obs, rew, done, state = env.step(action)
 
         # store log for greedy
         episode_log.append([action, rew, obs, float(done), state])
         layer_log.append(layers_list)
+        action_log.append(action)
+        value_log.append(value)
         episode_rew += rew
 
     #print(episode_rew, "=episode reward")
 
     env.close()
-    return episode_log, episode_rew, layer_log
+    return episode_log, episode_rew, layer_log, action_log, value_log

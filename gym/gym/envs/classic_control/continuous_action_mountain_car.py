@@ -22,13 +22,15 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 
-class Continuous_MountainCarEnv(gym.Env):
+class Continuous_Action_MountainCarEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 30
     }
 
     def __init__(self):
+        self.min_action = -1.0
+        self.max_action = 1.0
         self.min_position = -1.2
         self.max_position = 1.2
         self.max_speed = 0.2
@@ -37,7 +39,7 @@ class Continuous_MountainCarEnv(gym.Env):
         self.hillscale = 0
         self.rewarded = False
         self.rewarded_count = 0
-        self.velocity_shift = 0.05
+        self.power = 0.0015
         self.obsError = 0
 
         self.low = np.array([self.min_position, -self.max_speed])
@@ -45,7 +47,8 @@ class Continuous_MountainCarEnv(gym.Env):
 
         self.viewer = None
 
-        self.action_space = spaces.Discrete(3)
+        self.action_space = spaces.Box(low=self.min_action, high=self.max_action,
+                                       shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
 
         self.seed()
@@ -59,13 +62,14 @@ class Continuous_MountainCarEnv(gym.Env):
         self.obsError = obsError
 
     def step(self, action):
-        assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
+        force = min(max(action[0], -1.0), 1.0)
 
         position, velocity = self.state
-        velocity += (action-1)*self.velocity_shift  # continuous (3 action space)
+
+        velocity += force * self.power
         velocity = np.clip(velocity, 0, self.max_speed)
 
-        self.obs[0] += velocity + (action-1)*self.np_random.normal(0, self.obsError)
+        self.obs[0] += velocity + action*self.np_random.normal(0, self.obsError)
         self.obs[0] = np.clip(self.obs[0], self.min_position, self.max_position)
 
         position += velocity

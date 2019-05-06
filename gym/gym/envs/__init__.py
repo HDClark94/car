@@ -79,6 +79,13 @@ register(
 )
 
 register(
+    id='MountainCarContinuous_Action-v0',
+    entry_point='gym.envs.classic_control:Continuous_Action_MountainCarEnv',
+    max_episode_steps=200,
+    reward_threshold=-110.0,
+)
+
+register(
     id='Pendulum-v0',
     entry_point='gym.envs.classic_control:PendulumEnv',
     max_episode_steps=200,

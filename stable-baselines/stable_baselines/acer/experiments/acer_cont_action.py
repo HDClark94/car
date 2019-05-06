@@ -13,7 +13,6 @@ plot_path = os.path.join(dir, 'figures', 'continuous_action', '')
 
 
 action_errors = [0.01, 0.1, 1]
-actionDim = 3
 training_steps = 400000
 
 print("running ACER")
@@ -28,7 +27,6 @@ for std in action_errors:
     # set params for env
     env = gym.make(env_string)
     env.set_obs_error(std)
-    env.set_action_dim(actionDim)
     env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
 
     for i in range(3):

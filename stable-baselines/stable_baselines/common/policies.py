@@ -201,14 +201,13 @@ class ActorCriticPolicy(BasePolicy):
         sets up the layers
         layers_list is a list of tensors in which the layers are order first by iteration through shared layers (policy and value network) and then through non-shared layers
         policy then value. e.g. layers_list = [Tensor of shared layer policy-value,
-                                               Tensor of non-shared layer 1 of policy network,
+                                               Tensor of non-shared layer 1 of value network,
                                                Tensor of non-shared layer 1 of value network,
                                                Tensor of non-shared layer 2 of policy network,
                                                Tensor of non-shared layer 2 of policy network,
         """
         with tf.variable_scope("layers", reuse=True):
             self.layers_list = layers_list
-
             # no idea which layers refer to which at this point
 
     def _setup_init(self):
@@ -475,7 +474,7 @@ class FeedForwardPolicy(ActorCriticPolicy):
         else:
             #action, value, neglogp = self.sess.run([self.action, self._value, self.neglogp],
             #                                                 {self.obs_ph: obs})
-            action, value, neglogp, layers_list = self.sess.run([self.action, self._value, self.neglogp, self.layers_list],
+            action, value, neglogp, layers_list, layer_outputs = self.sess.run([self.action, self._value, self.neglogp, self.layers_list],
                                                    {self.obs_ph: obs})
         return action, value, self.initial_state, neglogp, layers_list
 

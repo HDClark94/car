@@ -32,9 +32,9 @@ gym/envs/box2d/test_lunar_lander.py
 gym/envs/classic_control/__init__.py
 gym/envs/classic_control/acrobot.py
 gym/envs/classic_control/cartpole.py
+gym/envs/classic_control/continuous_action_mountain_car.py
 gym/envs/classic_control/continuous_mountain_car.py
 gym/envs/classic_control/mountain_car.py
-gym/envs/classic_control/mountain_car_a3.py
 gym/envs/classic_control/pendulum.py
 gym/envs/classic_control/rendering.py
 gym/envs/classic_control/assets/clockwise.png

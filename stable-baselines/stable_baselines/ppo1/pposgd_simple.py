@@ -43,7 +43,7 @@ class PPO1(ActorCriticRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, actiondim=2, gamma=0.99, timesteps_per_actorbatch=256, clip_param=0.2, entcoeff=0.01,
+    def __init__(self, policy, env, gamma=0.99, timesteps_per_actorbatch=256, clip_param=0.2, entcoeff=0.01,
                  optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64, lam=0.95, adam_epsilon=1e-5,
                  schedule='linear', verbose=0, tensorboard_log=None,
                  _init_setup_model=True, policy_kwargs=None, full_tensorboard_log=False, action_error_std=0):
@@ -80,12 +80,13 @@ class PPO1(ActorCriticRLModel):
         self.episode_reward = None
 
         self.action_error_std = action_error_std
-        self.actiondim = actiondim
 
         self.ep_logs = []
         self.ep_rews = []
         self.eval_steps = []
         self.layer_log = []
+        self.action_log = []
+        self.value_log = []
 
         if _init_setup_model:
             self.setup_model()
@@ -334,11 +335,13 @@ class PPO1(ActorCriticRLModel):
                     if self.verbose >= 1 and MPI.COMM_WORLD.Get_rank() == 0:
                         logger.dump_tabular()
 
-                    ep_log, ep_rew, layer_log = evaluate_policy(self, eval_env, seed=seed)
+                    ep_log, ep_rew, layer_log, action_log, value_log = evaluate_policy(self, eval_env, seed=seed)
                     self.eval_steps.append(timesteps_so_far)
                     self.ep_logs.append(ep_log)
                     self.ep_rews.append(ep_rew)
                     self.layer_log.append(layer_log)
+                    self.action_log.append(action_log)
+                    self.value_log.append(value_log)
 
         return self
 

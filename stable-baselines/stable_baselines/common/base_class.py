@@ -364,7 +364,7 @@ class ActorCriticRLModel(BaseRLModel):
         vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
-        actions, _, states, _, layers_list = self.step(observation, state, mask, deterministic=deterministic)
+        actions, values, states, _, layers_list = self.step(observation, state, mask, deterministic=deterministic)
 
         clipped_actions = actions
         # Clip the actions to avoid out of bound error
@@ -376,7 +376,7 @@ class ActorCriticRLModel(BaseRLModel):
                 raise ValueError("Error: The environment must be vectorized when using recurrent policies.")
             clipped_actions = clipped_actions[0]
 
-        return clipped_actions, states, layers_list
+        return clipped_actions, states, layers_list, values
 
     def action_probability(self, observation, state=None, mask=None, actions=None):
         if state is None:
