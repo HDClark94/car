@@ -201,10 +201,10 @@ class ActorCriticPolicy(BasePolicy):
         sets up the layers
         layers_list is a list of tensors in which the layers are order first by iteration through shared layers (policy and value network) and then through non-shared layers
         policy then value. e.g. layers_list = [Tensor of shared layer policy-value,
-                                               Tensor of non-shared layer 1 of value network,
+                                               Tensor of non-shared layer 1 of policy network,
                                                Tensor of non-shared layer 1 of value network,
                                                Tensor of non-shared layer 2 of policy network,
-                                               Tensor of non-shared layer 2 of policy network,
+                                               Tensor of non-shared layer 2 of value network,
         """
         with tf.variable_scope("layers", reuse=True):
             self.layers_list = layers_list
