@@ -82,7 +82,7 @@ def plot_summary(behaviour, actions, values, save_path, title):
 
     # TODO add plots for actions and values of last trial
 
-    f, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(2, 3, sharex='col')
+    f, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, sharex='col')
     raster(behaviour, ax1)
     accum_reward(behaviour, ax2)
     speed_of_last(behaviour, ax3)

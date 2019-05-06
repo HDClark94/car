@@ -10,7 +10,6 @@ def evaluate_policy(model, env, seed=None):
 
     env.set_obs_error(model.action_error_std)
     env.seed(seed)
-    env.set_action_dim(model.actiondim)
 
     obs, done = env.reset(), False
     episode_rew = 0

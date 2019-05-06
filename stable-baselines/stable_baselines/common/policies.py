@@ -474,7 +474,7 @@ class FeedForwardPolicy(ActorCriticPolicy):
         else:
             #action, value, neglogp = self.sess.run([self.action, self._value, self.neglogp],
             #                                                 {self.obs_ph: obs})
-            action, value, neglogp, layers_list, layer_outputs = self.sess.run([self.action, self._value, self.neglogp, self.layers_list],
+            action, value, neglogp, layers_list = self.sess.run([self.action, self._value, self.neglogp, self.layers_list],
                                                    {self.obs_ph: obs})
         return action, value, self.initial_state, neglogp, layers_list
 
