@@ -96,7 +96,8 @@ def plot_summary(behaviour, actions, values, save_path, title):
 
 
 def actions_of_last(behaviour, actions, ax=None):
-    ax.set(xlabel="Position", ylabel="Action Selected")
+    ax.set(xlabel="Track Position", ylabel="Action Selected")
+    ax.set_xlim([-0.6, 1])  # track limits
 
     last_trial = np.array(behaviour[-1])
     last_trial_actions = np.array(actions[-1])
@@ -107,7 +108,8 @@ def actions_of_last(behaviour, actions, ax=None):
 
 
 def value_fn_of_last(behaviour, values, ax=None):
-    ax.set(xlabel="Position", ylabel="Value")
+    ax.set(xlabel="Track Position", ylabel="Value")
+    ax.set_xlim([-0.6, 1])  # track limits
 
     last_trial = np.array(behaviour[-1])
     last_trial_values = np.array(values[-1])
