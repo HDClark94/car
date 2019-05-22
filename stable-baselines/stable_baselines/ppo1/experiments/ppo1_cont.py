@@ -14,7 +14,6 @@ dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'continuous_action', '')
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
-actionDim = 3
 training_steps = 400000
 seed = 3
 print("running PPO1")

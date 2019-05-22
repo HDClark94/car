@@ -11,10 +11,10 @@ import os
 from stable_baselines.common.misc_util import set_global_seeds
 
 dir = os.path.dirname(__file__)
-plot_path = os.path.join(dir, 'figures', 'continuous_action', '')
+plot_path = os.path.join(dir, 'figures', 'trinary_action', '')
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
-training_steps = 50000
+training_steps = 200000
 seed = 3
 print("running PPO1")
 
