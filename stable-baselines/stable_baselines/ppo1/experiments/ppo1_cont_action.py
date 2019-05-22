@@ -14,9 +14,10 @@ dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'trinary_action', '')
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
-training_steps = 200000
+training_steps = 400000
 seed = 3
 print("running PPO1")
+id = 0
 
 # with error
 env_string = 'MountainCarContinuous-v0'
@@ -36,14 +37,17 @@ for std in action_errors:
             std_str = str(std).split(".")[1]
         else:
             std_str = str(std)
-        title = "bivel_std=" + std_str + "_i=" + str(i)
+
+        id_string = str(id).rjust(4, "0")
+        title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
         model = PPO1(MlpPolicy, env, verbose=0, action_error_std=std)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string, seed=seed)
 
         # for plotting
-        plot_summary(model.ep_logs, model.action_log, model.value_log, plot_path, title)
+        plot_summary_with_fn(model.ep_logs, model.action_log, model.value_log, plot_path, title)
         plot_network_activation(model.layer_log, model.ep_logs, plot_path, title+"_last_trial_layer_")
 
         del model # remove to demonstrate saving and loading
+        id += 1

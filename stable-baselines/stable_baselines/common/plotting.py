@@ -78,7 +78,7 @@ def plot_network_activation(layer_behaviour, behaviour, save_path, title):
 
 
 
-def plot_summary(behaviour, actions, values, save_path, title):
+def plot_summary_with_fn(behaviour, actions, values, save_path, title):
 
     # TODO add plots for actions and values of last trial
 
@@ -110,18 +110,19 @@ def actions_of_last(behaviour, actions, ax=None):
 def value_fn_of_last(behaviour, values, ax=None):
     ax.set(xlabel="Position", ylabel="Value")
     ax.set_xlim([-0.6, 1])  # track limits
-    ymin = 0
-    ymax = 100
-    ax.set_ylim([ymin, ymax])
-
-    x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
-    y = [ymin, ymin, ymax, ymax]
-    ax.fill(x, y, color="k", alpha=0.2)
 
     last_trial = np.array(behaviour[-1])
     last_trial_values = np.array(values[-1])
 
     pos = [i[0] for i in last_trial[:, 4]]  # vector of positions
+
+    ymin = 0
+    ymax = max(last_trial_values) + 0.1*max(last_trial_values)
+    ax.set_ylim([ymin, ymax])
+
+    x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
+    y = [ymin, ymin, ymax, ymax]
+    ax.fill(x, y, color="k", alpha=0.2)
 
     return ax.plot(pos, last_trial_values, color='k')
 
