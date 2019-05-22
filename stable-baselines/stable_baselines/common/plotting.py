@@ -82,13 +82,13 @@ def plot_summary(behaviour, actions, values, save_path, title):
 
     # TODO add plots for actions and values of last trial
 
-    f, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, sharex='col')
+    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     raster(behaviour, ax1)
-    accum_reward(behaviour, ax2)
+    #accum_reward(behaviour, ax2)
     speed_of_last(behaviour, ax3)
-    average_ep_reward(behaviour, ax4)
-    actions_of_last(behaviour, actions, ax5)
-    value_fn_of_last(behaviour, values, ax6)
+    average_ep_reward(behaviour, ax2)
+    #actions_of_last(behaviour, actions, ax5)
+    value_fn_of_last(behaviour, values, ax4)
     f.tight_layout()
     #plt.show()
 
@@ -96,7 +96,7 @@ def plot_summary(behaviour, actions, values, save_path, title):
 
 
 def actions_of_last(behaviour, actions, ax=None):
-    ax.set(xlabel="Track Position", ylabel="Action Selected")
+    ax.set(xlabel="Position", ylabel="Action Selected")
     ax.set_xlim([-0.6, 1])  # track limits
 
     last_trial = np.array(behaviour[-1])
@@ -108,8 +108,15 @@ def actions_of_last(behaviour, actions, ax=None):
 
 
 def value_fn_of_last(behaviour, values, ax=None):
-    ax.set(xlabel="Track Position", ylabel="Value")
+    ax.set(xlabel="Position", ylabel="Value")
     ax.set_xlim([-0.6, 1])  # track limits
+    ymin = 0
+    ymax = 100
+    ax.set_ylim([ymin, ymax])
+
+    x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
+    y = [ymin, ymin, ymax, ymax]
+    ax.fill(x, y, color="k", alpha=0.2)
 
     last_trial = np.array(behaviour[-1])
     last_trial_values = np.array(values[-1])
