@@ -39,7 +39,7 @@ class Continuous_Action_MountainCarEnv(gym.Env):
         self.hillscale = 0
         self.rewarded = False
         self.rewarded_count = 0
-        self.power = 0.0015
+        self.power = 0.05
         self.obsError = 0
 
         self.low = np.array([self.min_position, -self.max_speed])
@@ -66,7 +66,7 @@ class Continuous_Action_MountainCarEnv(gym.Env):
 
         position, velocity = self.state
 
-        velocity += force * self.power
+        velocity += force*self.power
         velocity = np.clip(velocity, 0, self.max_speed)
 
         self.obs[0] += velocity + action*self.np_random.normal(0, self.obsError)

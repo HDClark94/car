@@ -116,7 +116,7 @@ def value_fn_of_last(behaviour, values, ax=None):
 
     pos = [i[0] for i in last_trial[:, 4]]  # vector of positions
 
-    ymin = 0
+    ymin = min(last_trial_values) - 0.1*max(last_trial_values)
     ymax = max(last_trial_values) + 0.1*max(last_trial_values)
     ax.set_ylim([ymin, ymax])
 
