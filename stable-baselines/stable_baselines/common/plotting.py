@@ -94,6 +94,8 @@ def plot_summary_with_fn(behaviour, actions, values, save_path, title):
 
     f.savefig(save_path + title)
 
+    f.clf()
+
 
 def actions_of_last(behaviour, actions, ax=None):
     ax.set(xlabel="Position", ylabel="Action Selected")

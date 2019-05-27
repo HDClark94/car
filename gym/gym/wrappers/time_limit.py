@@ -46,6 +46,10 @@ class TimeLimit(Wrapper):
     def set_obs_error(self, obsError):
         self.env.set_obs_error(obsError)
 
+    # i think this is deprecated ~HC
     def set_action_dim(self, actionDim):
         self.env.set_action_dim(actionDim)
+
+    def SetTrialType(self):
+        self.env.SetTrialType()
 

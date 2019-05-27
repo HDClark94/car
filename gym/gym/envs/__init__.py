@@ -65,6 +65,13 @@ register(
 )
 
 register(
+    id='state_velovisual_MountainCar-v0',
+    entry_point='gym.envs.classic_control:state_velovisual_MountainCarEnv',
+    max_episode_steps=200,
+    reward_threshold=-110.0,
+)
+
+register(
     id='MountainCar-v0',
     entry_point='gym.envs.classic_control:MountainCarEnv',
     max_episode_steps=200,
@@ -72,8 +79,22 @@ register(
 )
 
 register(
+    id='state_velovisual_MountainCarContinuous-v0',
+    entry_point='gym.envs.classic_control:state_velovisual_Continuous_MountainCarEnv',
+    max_episode_steps=200,
+    reward_threshold=-110.0,
+)
+
+register(
     id='MountainCarContinuous-v0',
-    entry_point='gym.envs.classic_control:Continuous_MountainCarEnv',
+    entry_point='gym.envs.classic_control:state_velovisual_Continuous_MountainCarEnv',
+    max_episode_steps=200,
+    reward_threshold=-110.0,
+)
+
+register(
+    id='state_velovisual_MountainCarContinuous_Action-v0',
+    entry_point='gym.envs.classic_control:Continuous_Action_MountainCarEnv',
     max_episode_steps=200,
     reward_threshold=-110.0,
 )

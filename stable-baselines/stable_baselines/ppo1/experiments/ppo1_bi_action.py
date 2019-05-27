@@ -21,7 +21,7 @@ print("running PPO1")
 # multiprocess environment
 
 env_string = 'MountainCar-v0'
-id = 0
+id = 40
 
 for std in action_errors:
 
@@ -48,3 +48,4 @@ for std in action_errors:
         plot_network_activation(model.layer_log, model.ep_logs, plot_path, title + "_last_trial_layer_")
 
         del model # remove to demonstrate saving and loading
+        id += 1

@@ -18,7 +18,7 @@ training_steps = 400000
 seed = 3
 print("running PPO1")
 
-id = 0
+id = 40
 
 # with error
 env_string = 'MountainCarContinuous_Action-v0'
