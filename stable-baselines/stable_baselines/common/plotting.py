@@ -12,7 +12,8 @@ from stable_baselines.common import ActorCriticRLModel, tf_util, SetVerbosity, T
 from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
 
-def plot_network_activation(layer_behaviour, behaviour, save_path, title):
+def plot_network_activation(layer_behaviour, behaviour, trialtype_log, save_path, title):
+    # TODO plot activations for last example for beaconed, probe and non beaconed
     # currently hardcoded for 64 units and 4 layers (2 per network)
 
     last_trial_log = np.array(behaviour[-1])
@@ -78,12 +79,12 @@ def plot_network_activation(layer_behaviour, behaviour, save_path, title):
 
 
 
-def plot_summary_with_fn(behaviour, actions, values, save_path, title):
+def plot_summary_with_fn(behaviour, actions, values, trialtype_log, save_path, title):
 
     # TODO add plots for actions and values of last trial
 
     f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-    raster(behaviour, ax1)
+    raster(behaviour, trialtype_log, ax1)
     #accum_reward(behaviour, ax2)
     speed_of_last(behaviour, ax3)
     average_ep_reward(behaviour, ax2)
@@ -193,7 +194,7 @@ def speed_of_last(behaviour, ax=None):
 
     return ax.plot(pos, v, color='k')
 
-def raster(behaviour, ax=None):
+def raster(behaviour, trialtype_log, ax=None):
 
     # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
     no_trials = len(behaviour)
@@ -222,7 +223,19 @@ def raster(behaviour, ax=None):
     #print(np.shape(all_trial_stopping), "shape of all_trial_stopping")
     #print("LAST = ", all_trial_stopping[-1], "  last ", behaviour[-1])
 
+
+    colors = []
+    for trialtype in trialtype_log:
+        if trialtype == "beaconed":
+            colors.append("k")
+        elif trialtype == "non_beaconed":
+            colors.append("b")
+        elif trialtype == "probe":
+            colors.append("r")
+        else:
+            print("trial type does not match string beaconed probe or non_beaconed")
+
     # Draw a spike raster plot
-    return ax.eventplot(all_trial_stopping, linewidths=5, color='k')
+    return ax.eventplot(all_trial_stopping, linewidths=5, color=colors)
 
 

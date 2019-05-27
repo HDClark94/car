@@ -17,7 +17,7 @@ def evaluate_policy(model, env, seed=None):
     layer_log = []
     action_log = []
     value_log = []
-    output_log = []
+    trial_type = env.trialtype
 
     while not done:
         # env.render()
@@ -34,4 +34,4 @@ def evaluate_policy(model, env, seed=None):
     #print(episode_rew, "=episode reward")
 
     env.close()
-    return episode_log, episode_rew, layer_log, action_log, value_log
+    return episode_log, episode_rew, layer_log, action_log, value_log, trial_type

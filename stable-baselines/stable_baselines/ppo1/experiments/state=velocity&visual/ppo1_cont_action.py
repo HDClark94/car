@@ -13,11 +13,11 @@ from stable_baselines.common.misc_util import set_global_seeds
 dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'trinary_action', '')
 
-action_errors = [0]
+action_errors = [0, 0.001, 0.01, 0.1]
 training_steps = 400000
 seed = 3
 print("running PPO1")
-id = 0
+id = 20
 
 # with error
 env_string = 'state_velovisual_MountainCarContinuous-v0'
@@ -32,7 +32,7 @@ for std in action_errors:
 
     env = DummyVecEnv([lambda: env])
 
-    for i in range(10):
+    for i in range(4):
         if len(str(std).split("."))>1:
             std_str = str(std).split(".")[1]
         else:

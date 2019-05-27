@@ -122,7 +122,7 @@ class state_velovisual_MountainCarEnv(gym.Env):
 
         self.state = (position, velocity)
 
-        self.obs[1] = self.state[1] # velocity is same
+        self.obs[1] = self.state[1] + action*self.np_random.normal(0, self.obsError) # velocity is same
 
         return np.array(self.obs), reward, done, np.array(self.state)
 
