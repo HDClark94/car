@@ -79,14 +79,14 @@ def plot_network_activation(layer_behaviour, behaviour, trialtype_log, save_path
 
 
 
-def plot_summary_with_fn(behaviour, actions, values, trialtype_log, save_path, title):
+def plot_summary_with_fn(behaviour, values, trialtype_log, save_path, title):
 
     # TODO add plots for actions and values of last trial
 
     f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     raster(behaviour, trialtype_log, ax1)
     #accum_reward(behaviour, ax2)
-    speed_of_last(behaviour, ax3)
+    speed_of_last(behaviour, trialtype_log, ax3)
     average_ep_reward(behaviour, ax2)
     #actions_of_last(behaviour, actions, ax5)
     value_fn_of_last(behaviour, values, ax4)
@@ -175,8 +175,19 @@ def accum_reward(behaviour, ax=None):
 
     return ax.plot(np.arange(1,no_trials+1), accum_rew,  color='k')
 
+def last_trials_of_trialtype(behaviour, trialtype_log, trialtype_wanted, last_n=5):
+    trialtype_log = np.array(trialtype_log)
+    idx = np.where(trialtype_log == trialtype_wanted)[-1][-last_n:]  # picks last n elements of array that meets trialtype condition, returns index
+    print(idx)
 
-def speed_of_last(behaviour, ax=None):
+    tmp = []
+    for i in idx:
+        tmp.append(behaviour[i])
+    behaviour = tmp
+
+    return behaviour
+
+def speed_of_last(behaviour, trialtype_log, ax=None):
     # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
     # plt.title(title)
     ax.set(xlabel='Track Position', ylabel='Speed')
@@ -187,12 +198,27 @@ def speed_of_last(behaviour, ax=None):
     ax.set_xlim([-0.6, 1])  # track limits
     ax.set_ylim([0, 0.25])
 
-    last_trial = np.array(behaviour[-1])
+    last_trials_b = last_trials_of_trialtype(behaviour, trialtype_log, "beaconed")
+    last_trials_nb = last_trials_of_trialtype(behaviour, trialtype_log, "non_beaconed")
+    last_trials_p = last_trials_of_trialtype(behaviour, trialtype_log, "probe")
 
-    v = [i[1] for i in last_trial[:, 4]]  # vector of velocities
-    pos = [i[0] for i in last_trial[:, 4]] # vector of positions
+    if len(last_trials_b)>0:
+        for trial in last_trials_b:
+            v = [i[1] for i in np.array(trial)[:, 4]]  # vector of velocities
+            pos = [i[0] for i in np.array(trial)[:, 4]] # vector of positions
+            ax.plot(pos, v, color='k')
 
-    return ax.plot(pos, v, color='k')
+    if len(last_trials_nb) > 0:
+        for trial in last_trials_nb:
+            v = [i[1] for i in np.array(trial)[:, 4]]  # vector of velocities
+            pos = [i[0] for i in np.array(trial)[:, 4]]  # vector of positions
+            ax.plot(pos, v, color='b')
+
+    if len(last_trials_p) > 0:
+        for trial in last_trials_p:
+            v = [i[1] for i in np.array(trial)[:, 4]]  # vector of velocities
+            pos = [i[0] for i in np.array(trial)[:, 4]]  # vector of positions
+            ax.plot(pos, v, color='r')
 
 def raster(behaviour, trialtype_log, ax=None):
 

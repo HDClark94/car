@@ -17,7 +17,7 @@ def evaluate_policy(model, env, seed=None):
     layer_log = []
     action_log = []
     value_log = []
-    trial_type = env.trialtype
+    trial_type = env.env.trialtype
 
     while not done:
         # env.render()

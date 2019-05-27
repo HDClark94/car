@@ -87,6 +87,7 @@ class PPO1(ActorCriticRLModel):
         self.layer_log = []
         self.action_log = []
         self.value_log = []
+        self.trialtype_log = []
 
         if _init_setup_model:
             self.setup_model()

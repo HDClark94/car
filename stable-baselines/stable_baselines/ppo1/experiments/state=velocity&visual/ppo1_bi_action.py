@@ -21,7 +21,7 @@ print("running PPO1")
 # multiprocess environment
 
 env_string = 'state_velovisual_MountainCar-v0'
-id = 20
+id = 90
 
 for std in action_errors:
 
@@ -44,8 +44,8 @@ for std in action_errors:
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting
-        plot_summary_with_fn(model.ep_logs, model.value_log, model.action_log, plot_path, title)
-        plot_network_activation(model.layer_log, model.ep_logs, plot_path, title + "_last_trial_layer_")
+        plot_summary_with_fn(model.ep_logs, model.value_log, model.trialtype_log, plot_path, title)
+        plot_network_activation(model.layer_log, model.ep_logs, model.trialtype_log, plot_path, title + "_last_trial_layer_")
 
         del model # remove to demonstrate saving and loading
         id += 1
