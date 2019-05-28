@@ -39,6 +39,7 @@ class Continuous_MountainCarEnv(gym.Env):
         self.rewarded_count = 0
         self.velocity_shift = 0.05
         self.obsError = 0
+        self.trialtype = "non_beaconed"
 
         self.low = np.array([self.min_position, -self.max_speed])
         self.high = np.array([self.max_position, self.max_speed])

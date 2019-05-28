@@ -100,6 +100,10 @@ class DQN(OffPolicyRLModel):
         self.ep_logs = []
         self.ep_rews = []
         self.eval_steps = []
+        self.layer_log = []
+        self.value_log = []
+        self.trialtype_log = []
+        self.action_log = []
 
         if _init_setup_model:
             self.setup_model()
@@ -280,10 +284,14 @@ class DQN(OffPolicyRLModel):
 
                 # evaluate policy and log
                 if steps%eval_freq==0:
-                    ep_log, ep_rew = evaluate_policy(self, eval_env)
+                    ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy(self, eval_env, seed=seed)
                     self.eval_steps.append(steps)
                     self.ep_logs.append(ep_log)
                     self.ep_rews.append(ep_rew)
+                    self.layer_log.append(layer_log)
+                    self.action_log.append(action_log)
+                    self.value_log.append(value_log)
+                    self.trialtype_log.append(trialtype)
 
                 self.num_timesteps += 1
 
@@ -295,12 +303,12 @@ class DQN(OffPolicyRLModel):
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
         with self.sess.as_default():
-            actions, _, _ = self.step_model.step(observation, deterministic=deterministic)
+            actions, values, _, layers_list = self.step_model.step(observation, deterministic=deterministic)
 
         if not vectorized_env:
             actions = actions[0]
 
-        return actions, None
+        return actions, None, layers_list, values
 
     def action_probability(self, observation, state=None, mask=None, actions=None):
         observation = np.array(observation)

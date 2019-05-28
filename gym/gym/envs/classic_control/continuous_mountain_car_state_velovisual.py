@@ -65,8 +65,8 @@ class state_velovisual_Continuous_MountainCarEnv(gym.Env):
 
     def SetTrialType(self):
         self.trial_count += 1
-        if self.trial_count % 5 == 0:
-            if self.np_random.normal(0, 0) < 0:
+        if self.trial_count % 5 == 0 and self.trial_count>1000:
+            if self.np_random.normal(0, 1) < 0:
                 self.trialtype = "probe"
                 self.rewarded = True  # this line stops the reward being given
             else:
@@ -76,12 +76,19 @@ class state_velovisual_Continuous_MountainCarEnv(gym.Env):
 
     def visual_input(self, position, reward_zone_sight=0.4):
 
-        if position+reward_zone_sight>= self.goal_position -(self.goal_width/2) and position <= self.goal_position+(self.goal_width/2):
-            max_distance_to_goal = (self.goal_position -(self.goal_width/2)) - self.start_pos
-            distance_to_goal =     (self.goal_position -(self.goal_width/2)) - position
-            covered_distance_to_goal = max_distance_to_goal-distance_to_goal
-            visual_input = covered_distance_to_goal/max_distance_to_goal
+        '''
+        if position + reward_zone_sight >= self.goal_position - (
+                self.goal_width / 2) and position <= self.goal_position + (self.goal_width / 2):
+            max_distance_to_goal = (self.goal_position - (self.goal_width / 2)) - self.start_pos
+            distance_to_goal = (self.goal_position - (self.goal_width / 2)) - position
+            covered_distance_to_goal = max_distance_to_goal - distance_to_goal
+            visual_input = covered_distance_to_goal / max_distance_to_goal
 
+        '''
+
+        if position >= self.goal_position - (self.goal_width / 2) and position <= self.goal_position + (
+                self.goal_width / 2):
+            visual_input = 1
         else:
             visual_input = 0
 

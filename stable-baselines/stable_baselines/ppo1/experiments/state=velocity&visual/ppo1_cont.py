@@ -18,7 +18,7 @@ training_steps = 400000
 seed = 3
 print("running PPO1")
 
-id = 30
+id = 300
 
 # with error
 env_string = 'state_velovisual_MountainCarContinuous_Action-v0'
@@ -33,7 +33,7 @@ for std in action_errors:
 
     env = DummyVecEnv([lambda: env])
 
-    for i in range(4):
+    for i in range(3):
         if len(str(std).split("."))>1:
             std_str = str(std).split(".")[1]
         else:

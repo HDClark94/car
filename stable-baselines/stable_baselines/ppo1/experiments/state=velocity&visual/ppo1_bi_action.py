@@ -21,7 +21,7 @@ print("running PPO1")
 # multiprocess environment
 
 env_string = 'state_velovisual_MountainCar-v0'
-id = 90
+id = 300
 
 for std in action_errors:
 
@@ -30,7 +30,7 @@ for std in action_errors:
     env.set_obs_error(std)
     env = DummyVecEnv([lambda: env])
 
-    for i in range(4):
+    for i in range(3):
         if len(str(std).split("."))>1:
             std_str = str(std).split(".")[1]
         else:

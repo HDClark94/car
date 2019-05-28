@@ -178,7 +178,6 @@ def accum_reward(behaviour, ax=None):
 def last_trials_of_trialtype(behaviour, trialtype_log, trialtype_wanted, last_n=5):
     trialtype_log = np.array(trialtype_log)
     idx = np.where(trialtype_log == trialtype_wanted)[-1][-last_n:]  # picks last n elements of array that meets trialtype condition, returns index
-    print(idx)
 
     tmp = []
     for i in idx:

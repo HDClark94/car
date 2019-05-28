@@ -34,6 +34,20 @@ class DQNPolicy(BasePolicy):
         self.q_values = None
         self.dueling = dueling
 
+    def _setup_init_layers(self, layers_list):
+        """
+        sets up the layers
+        layers_list is a list of tensors in which the layers are order first by iteration through shared layers (policy and value network) and then through non-shared layers
+        policy then value. e.g. layers_list = [Tensor of shared layer policy-value,
+                                               Tensor of non-shared layer 1 of policy network,
+                                               Tensor of non-shared layer 1 of value network,
+                                               Tensor of non-shared layer 2 of policy network,
+                                               Tensor of non-shared layer 2 of value network,
+        """
+        with tf.variable_scope("layers", reuse=True):
+            self.layers_list = layers_list
+
+
     def _setup_init(self):
         """
         Set up action probability
@@ -101,9 +115,11 @@ class FeedForwardPolicy(DQNPolicy):
             layers = [64, 64]
 
         with tf.variable_scope("model", reuse=reuse):
+            layers_list = []
+
             with tf.variable_scope("action_value"):
                 if feature_extraction == "cnn":
-                    extracted_features = cnn_extractor(self.processed_obs, **kwargs)
+                    extracted_features = cnn_extractor(self.processed_obs, **kwargs)  # layers_list not implemented for cnn
                     action_out = extracted_features
                 else:
                     extracted_features = tf.layers.flatten(self.processed_obs)
@@ -113,10 +129,11 @@ class FeedForwardPolicy(DQNPolicy):
                         if layer_norm:
                             action_out = tf_layers.layer_norm(action_out, center=True, scale=True)
                         action_out = act_fun(action_out)
+                        layers_list.append(action_out)
 
                 action_scores = tf_layers.fully_connected(action_out, num_outputs=self.n_actions, activation_fn=None)
 
-            if self.dueling:
+            if self.dueling:  # layers_list not implemented for dueling
                 with tf.variable_scope("state_value"):
                     state_out = extracted_features
                     for layer_size in layers:
@@ -134,9 +151,10 @@ class FeedForwardPolicy(DQNPolicy):
         self.q_values = q_out
         self.initial_state = None
         self._setup_init()
+        self._setup_init_layers(layers_list)
 
     def step(self, obs, state=None, mask=None, deterministic=True):
-        q_values, actions_proba = self.sess.run([self.q_values, self.policy_proba], {self.obs_ph: obs})
+        q_values, actions_proba, layers_list = self.sess.run([self.q_values, self.policy_proba, self.layers_list], {self.obs_ph: obs})
         if deterministic:
             actions = np.argmax(q_values, axis=1)
         else:
@@ -146,7 +164,7 @@ class FeedForwardPolicy(DQNPolicy):
             for action_idx in range(len(obs)):
                 actions[action_idx] = np.random.choice(self.n_actions, p=actions_proba[action_idx])
 
-        return actions, q_values, None
+        return actions, q_values, None, layers_list
 
     def proba_step(self, obs, state=None, mask=None):
         return self.sess.run(self.policy_proba, {self.obs_ph: obs})
