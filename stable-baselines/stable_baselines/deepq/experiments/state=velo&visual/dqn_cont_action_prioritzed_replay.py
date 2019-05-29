@@ -21,7 +21,8 @@ print("running DQN")
 # with error
 # multiprocess environment
 n_cpu = 4
-env_string = 'MountainCarContinuous-v0'
+env_string = 'state_velovisual_MountainCarContinuous-v0'
+id = 70
 
 for std in action_errors:
 
@@ -35,15 +36,18 @@ for std in action_errors:
             std_str = str(std).split(".")[1]
         else:
             std_str = str(std)
-        title = "contvel_std=" + std_str + "_i=" + str(i)
+
+        id_string = str(id).rjust(4, "0")
+        title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
         model = DQN(MlpPolicy, env, verbose=0, action_error_std=std, prioritized_replay=False)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting
-        plot_summary_with_fn(model.ep_logs, model.value_log, model.trialtype_log, plot_path, title)
-        plot_network_activation(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
+        plot_summary(model.ep_logs, model.trialtype_log, plot_path, title)
+        plot_network_activation_dqn(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
                                 title + "_last_trial_layer_")
 
         del model # remove to demonstrate saving and loading
+        id+=1
