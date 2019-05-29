@@ -34,7 +34,7 @@ class state_velovisual_MountainCarEnv(gym.Env):
         self.trialtype = "beaconed"
         self.start_pos = -0.6
 
-        self.low = np.array([self.min_visual_input, -self.max_speed])
+        self.low = np.array([self.min_visual_input, 0])
         self.high = np.array([self.max_visual_input, self.max_speed])
 
         self.viewer = None
@@ -92,22 +92,21 @@ class state_velovisual_MountainCarEnv(gym.Env):
         velocity = action*self.velocity_shift      # binary (2 actionspace)
         velocity = np.clip(velocity, 0, self.max_speed)
 
+        position += velocity
+        position = np.clip(position, self.min_position, self.max_position)
+
         # observation of visual input is scaled from position 0 from 0 to 1 until end of rewarded zone (0.6)
         if self.trialtype == "beaconed":
             visual_input = self.visual_input(position)
             self.obs[0] = visual_input
 
-        elif self.trialtype == "non beaconed":
+        elif self.trialtype == "non_beaconed":
             visual_input = 0
             self.obs[0] = visual_input
 
         elif self.trialtype == "probe":
             visual_input = 0
             self.obs[0] = visual_input
-
-
-        position += velocity
-        position = np.clip(position, self.min_position, self.max_position)
 
         done= False
         reward = -1
@@ -126,15 +125,18 @@ class state_velovisual_MountainCarEnv(gym.Env):
 
         self.obs[1] = self.state[1] + action*self.np_random.normal(0, self.obsError) # velocity is same
 
+        #print("t=", self.trialtype)
+        #print(", p= ", position, ", vi=", visual_input, ", obs=", self.obs)
+
         return np.array(self.obs), reward, done, np.array(self.state)
 
     def reset(self):
         self.state = np.array([self.start_pos, 0])
-        self.obs = self.state
+        self.obs = np.array([0, 0])
         self.rewarded = False
         self.rewarded_count = 0
         self.SetTrialType()
-        return np.array(self.state)
+        return self.obs
 
     def _height(self, xs):
             return np.sin(self.hillscale* xs)*.45+.55

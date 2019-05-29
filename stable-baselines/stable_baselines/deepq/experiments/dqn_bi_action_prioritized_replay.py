@@ -12,7 +12,7 @@ import os
 dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'binary_action_prioritized_replay', '')
 
-action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
+action_errors = [0, 0.01, 0.1, 1]
 training_steps = 400000
 
 print("running DQN")
@@ -30,10 +30,7 @@ for std in action_errors:
     env = DummyVecEnv([lambda: env])
 
     for i in range(4):
-        if len(str(std).split("."))>1:
-            std_str = str(std).split(".")[1]
-        else:
-            std_str = str(std)
+        std_str = "".join(str(std).split("."))
 
         id_string = str(id).rjust(4, "0")
         title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)

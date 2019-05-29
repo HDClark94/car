@@ -31,10 +31,7 @@ for std in action_errors:
     env = DummyVecEnv([lambda: env])
 
     for i in range(3):
-        if len(str(std).split("."))>1:
-            std_str = str(std).split(".")[1]
-        else:
-            std_str = str(std)
+        std_str = "".join(str(std).split("."))
 
         id_string = str(id).rjust(4, "0")
         title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)

@@ -21,7 +21,7 @@ print("running DQN")
 # multiprocess environment
 n_cpu = 4
 env_string = 'state_velovisual_MountainCar-v0'
-id = 70
+id = 80
 
 for std in action_errors:
 
@@ -31,10 +31,7 @@ for std in action_errors:
     env = DummyVecEnv([lambda: env])
 
     for i in range(4):
-        if len(str(std).split("."))>1:
-            std_str = str(std).split(".")[1]
-        else:
-            std_str = str(std)
+        std_str = "".join(str(std).split("."))
 
         id_string = str(id).rjust(4, "0")
         title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
