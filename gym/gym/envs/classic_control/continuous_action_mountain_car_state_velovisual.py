@@ -68,12 +68,8 @@ class state_velovisual_Continuous_Action_MountainCarEnv(gym.Env):
 
     def SetTrialType(self):
         self.trial_count += 1
-        if self.trial_count % 5 == 0  and self.trial_count>1000:
-            if self.np_random.normal(0, 1) < 0:
-                self.trialtype = "probe"
-                self.rewarded = True  # this line stops the reward being given
-            else:
-                self.trialtype = "non_beaconed"
+        if self.trial_count % 5 == 0:
+            self.trialtype = "non_beaconed"
         else:
             self.trialtype = "beaconed"
 
