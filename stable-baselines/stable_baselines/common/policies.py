@@ -297,6 +297,8 @@ class LstmPolicy(ActorCriticPolicy):
 
         self._kwargs_check(feature_extraction, kwargs)
 
+        layers_list = []
+
         with tf.variable_scope("input", reuse=True):
             self.masks_ph = tf.placeholder(tf.float32, [n_batch], name="masks_ph")  # mask (done t-1)
             # n_lstm * 2 dim because of the cell and hidden states of the LSTM
@@ -394,6 +396,7 @@ class LstmPolicy(ActorCriticPolicy):
                     self.pdtype.proba_distribution_from_latent(latent_policy, latent_value)
         self.initial_state = np.zeros((self.n_env, n_lstm * 2), dtype=np.float32)
         self._setup_init()
+        self._setup_init_layers(layers_list)
 
     def step(self, obs, state=None, mask=None, deterministic=False):
         if deterministic:

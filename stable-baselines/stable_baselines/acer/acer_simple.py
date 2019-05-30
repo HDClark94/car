@@ -153,6 +153,10 @@ class ACER(ActorCriticRLModel):
         self.ep_logs = []
         self.ep_rews = []
         self.eval_steps = []
+        self.layer_log = []
+        self.value_log = []
+        self.trialtype_log = []
+        self.action_log = []
 
         if _init_setup_model:
             self.setup_model()
@@ -546,10 +550,14 @@ class ACER(ActorCriticRLModel):
 
                 self.num_timesteps += self.n_batch
 
-                ep_log, ep_rew = evaluate_policy(self, eval_env)
+                ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy(self, eval_env)
                 self.eval_steps.append(steps)
                 self.ep_logs.append(ep_log)
                 self.ep_rews.append(ep_rew)
+                self.layer_log.append(layer_log)
+                self.action_log.append(action_log)
+                self.value_log.append(value_log)
+                self.trialtype_log.append(trialtype)
 
         return self
 
@@ -633,7 +641,7 @@ class _Runner(AbstractEnvRunner):
         enc_obs = [self.obs]
         mb_obs, mb_actions, mb_mus, mb_dones, mb_rewards = [], [], [], [], []
         for _ in range(self.n_steps):
-            actions, _, states, _ = self.model.step(self.obs, self.states, self.dones)
+            actions, _, states, _, layers_list = self.model.step(self.obs, self.states, self.dones)
             mus = self.model.proba_step(self.obs, self.states, self.dones)
             mb_obs.append(np.copy(self.obs))
             mb_actions.append(actions)
