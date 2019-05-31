@@ -84,6 +84,7 @@ class MountainCarEnv(gym.Env):
         self.state = (position, velocity)
 
         self.obs[1] = self.state[1] # velocity is same
+        self.obs[0] = 0
 
         return np.array(self.obs), reward, done, np.array(self.state)
 

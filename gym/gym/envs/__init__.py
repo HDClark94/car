@@ -79,6 +79,13 @@ register(
 )
 
 register(
+    id='Jinghua_Original_MountainCar-v0',
+    entry_point='gym.envs.classic_control:MountainCarJinghuaOriginalEnv',
+    max_episode_steps=200,
+    reward_threshold=-110.0,
+)
+
+register(
     id='MountainCar-v0',
     entry_point='gym.envs.classic_control:MountainCarEnv',
     max_episode_steps=200,
