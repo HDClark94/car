@@ -104,11 +104,14 @@ def train(RL):
                vel_list = np.array(vel_list)
                saver = tf.train.Saver()
 
-               saver.save(sess, '/home/harry/PycharmProjects/car/stable-baselines/stable_baselines/Jinghua/model.ckpt')
+               #saver.save(sess, '/home/harry/PycharmProjects/car/stable-baselines/stable_baselines/Jinghua/model.ckpt')
+               saver.save(sess, '/home/harry/PycharmProjects/car_rl/car/stable-baselines/stable_baselines/Jinghua/model.ckpt')
 
                #saver.save(sess, "/Home/yang/DQ/model.ckpt")
                #reader = tf.train.NewCheckpointReader("/HSome/yang/DQ/model.ckpt")
-               reader = tf.train.NewCheckpointReader('/home/harry/PycharmProjects/car/stable-baselines/stable_baselines/Jinghua/model.ckpt')
+               #reader = tf.train.NewCheckpointReader('/home/harry/PycharmProjects/car/stable-baselines/stable_baselines/Jinghua/model.ckpt')
+               reader = tf.train.NewCheckpointReader('/home/harry/PycharmProjects/car_rl/car/stable-baselines/stable_baselines/Jinghua/model.ckpt')
+
                w1 = reader.get_tensor("DQN_with_prioritized_replay/eval_net/l1/w1")
                b1 = reader.get_tensor("DQN_with_prioritized_replay/eval_net/l1/b1")
                w2 = reader.get_tensor("DQN_with_prioritized_replay/eval_net/l2/w2")

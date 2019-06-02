@@ -39,7 +39,7 @@ class MountainCarJinghuaEnv(gym.Env):
 
     def SetTrialType(self):
         self.trial_count += 1
-        if self.trial_count % 5 == 0 and self.trial_count>500:
+        if self.trial_count % 5 == 0 and self.trial_count>200:
             self.trialtype = "non_beaconed"
         else:
             self.trialtype = "beaconed"

@@ -1,2 +1,2 @@
-model_checkpoint_path: "/home/harry/PycharmProjects/car/stable-baselines/stable_baselines/Jinghua/model.ckpt"
-all_model_checkpoint_paths: "/home/harry/PycharmProjects/car/stable-baselines/stable_baselines/Jinghua/model.ckpt"
+model_checkpoint_path: "/home/harry/PycharmProjects/car_rl/car/stable-baselines/stable_baselines/Jinghua/model.ckpt"
+all_model_checkpoint_paths: "/home/harry/PycharmProjects/car_rl/car/stable-baselines/stable_baselines/Jinghua/model.ckpt"

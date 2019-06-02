@@ -400,11 +400,15 @@ class LstmPolicy(ActorCriticPolicy):
 
     def step(self, obs, state=None, mask=None, deterministic=False):
         if deterministic:
-            return self.sess.run([self.deterministic_action, self._value, self.snew, self.neglogp],
+            #return self.sess.run([self.deterministic_action, self._value, self.snew, self.neglogp],
+            #                     {self.obs_ph: obs, self.states_ph: state, self.masks_ph: mask})
+            return self.sess.run([self.deterministic_action, self._value, self.snew, self.neglogp, self.layers_list],
                                  {self.obs_ph: obs, self.states_ph: state, self.masks_ph: mask})
         else:
-            return self.sess.run([self.action, self._value, self.snew, self.neglogp],
+            return self.sess.run([self.action, self._value, self.snew, self.neglogp, self.layers_list],
                                  {self.obs_ph: obs, self.states_ph: state, self.masks_ph: mask})
+            #return self.sess.run([self.action, self._value, self.snew, self.neglogp],
+            #                     {self.obs_ph: obs, self.states_ph: state, self.masks_ph: mask})
 
     def proba_step(self, obs, state=None, mask=None):
         return self.sess.run(self.policy_proba, {self.obs_ph: obs, self.states_ph: state, self.masks_ph: mask})
