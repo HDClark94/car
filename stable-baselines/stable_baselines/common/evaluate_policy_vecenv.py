@@ -47,7 +47,7 @@ def evaluate_policy_vecenv(model, env, seed=None):
         value_log.append(value)
         episode_rew += rew
 
-    print(episode_rew, "=episode reward")
+    #print(episode_rew, "=episode reward")
 
     env.close()
     return episode_log, episode_rew, layer_log, action_log, value_log, trial_type

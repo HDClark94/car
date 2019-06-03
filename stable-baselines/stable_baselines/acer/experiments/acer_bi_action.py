@@ -12,7 +12,7 @@ dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
 action_errors = [0, 0.01, 0.1, 1]
-training_steps = 400000
+training_steps = 800000
 
 print("running ACER")
 
@@ -20,7 +20,7 @@ print("running ACER")
 # multiprocess environment
 n_cpu = 4
 env_string = 'MountainCar-v0'
-id = 0
+id = 500
 for std in action_errors:
 
     # set params for env
@@ -35,7 +35,7 @@ for std in action_errors:
         title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = ACER(MlpPolicy, env, verbose=0, action_error_std=std)
+        model = ACER(MlpPolicy, env, verbose=1, action_error_std=std)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting

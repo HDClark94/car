@@ -6,6 +6,7 @@ from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines import ACER
 import numpy as np
 from stable_baselines.common.plotting import *
+from stable_baselines.common.vec_env import DummyVecEnv
 import os
 
 dir = os.path.dirname(__file__)
@@ -13,14 +14,13 @@ plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
 action_errors = [0, 0.01, 0.1, 1]
 training_steps = 400000
-
 print("running ACER")
 
 # with error
 # multiprocess environment
-n_cpu = 1
+n_cpu = 4
 env_string = 'MountainCar-v0'
-id = 1000
+id = 1002
 policy = MlpLstmPolicy
 
 for std in action_errors:
@@ -28,7 +28,8 @@ for std in action_errors:
     # set params for env
     env = gym.make(env_string)
     env.set_obs_error(std)
-    env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
+    #env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
+    env = DummyVecEnv([lambda: env])
 
     for i in range(3):
         std_str = "".join(str(std).split("."))
@@ -37,7 +38,7 @@ for std in action_errors:
         title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = ACER(policy, env, verbose=0, action_error_std=std)
+        model = ACER(policy, env, verbose=1, action_error_std=std)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting
