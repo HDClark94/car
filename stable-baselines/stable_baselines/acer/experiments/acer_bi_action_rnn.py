@@ -21,6 +21,8 @@ print("running ACER")
 n_cpu = 1
 env_string = 'MountainCar-v0'
 id = 1000
+policy = MlpLstmPolicy
+
 for std in action_errors:
 
     # set params for env
@@ -35,13 +37,17 @@ for std in action_errors:
         title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = ACER(MlpLstmPolicy, env, verbose=0, action_error_std=std)
+        model = ACER(policy, env, verbose=0, action_error_std=std)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting
         plot_summary_with_fn(model.ep_logs, model.value_log, model.trialtype_log, plot_path, title)
-        #plot_network_activation(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
-        #                        title + "_last_trial_layer_")
+        if policy == MlpPolicy:
+            plot_network_activation(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
+                                title + "_last_trial_layer_")
+        elif policy == MlpLstmPolicy or policy == MlpLnLstmPolicy:
+            plot_network_activation_rnn(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
+                                    title + "_last_trial_layer_")
 
         del model # remove to demonstrate saving and loading
         id+=1

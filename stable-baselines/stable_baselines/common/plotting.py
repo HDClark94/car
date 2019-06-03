@@ -123,7 +123,34 @@ def plot_network_activation(layer_behaviour, behaviour, trialtype_log, save_path
     fig_l4.clf()
 
 
+def plot_network_activation_rnn(layer_behaviour, behaviour, trialtype_log, save_path, title):
+    # TODO plot activations for last example for beaconed, probe and non beaconed
+    # currently hardcoded for 64 units and 4 layers (2 per network)
 
+    last_trial_log = np.array(behaviour[-1])
+    pos = [i[0] for i in last_trial_log[:, 4]] # vector of positions
+    last_trial_layers = np.array(layer_behaviour[-1])
+
+    fig_l1, ax_l1 = plt.subplots(16, 16, sharex=True, sharey=True, figsize=(20, 20))
+
+    x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
+    y = [-1.2, -1.2, 1.2, 1.2]
+
+    count = 0
+    for i in range(16):
+        for j in range(16):
+            activations = last_trial_layers[:, :, :, count]
+
+            ax_l1[i, j].scatter(pos, activations[:, 0])
+            ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+            ax_l1[i, j].set_xlim([-0.6, 1])  # track limits
+            ax_l1[i, j].fill(x, y, color="k", alpha=0.2)
+            ax_l1[i, j].set_ylim([-1.1, 1.1])  # track limits
+
+            count += 1
+    fig_l1.tight_layout()
+    fig_l1.savefig(save_path + title + "l1_pn")
+    fig_l1.clf()
 
 def plot_summary_with_fn(behaviour, values, trialtype_log, save_path, title):
 

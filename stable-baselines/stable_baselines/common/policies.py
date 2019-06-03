@@ -323,6 +323,9 @@ class LstmPolicy(ActorCriticPolicy):
                 rnn_output, self.snew = lstm(input_sequence, masks, self.states_ph, 'lstm1', n_hidden=n_lstm,
                                              layer_norm=layer_norm)
                 rnn_output = seq_to_batch(rnn_output)
+
+                # added for unit activations visuals 3/9/19
+                layers_list.append(rnn_output)
                 value_fn = linear(rnn_output, 'vf', 1)
 
                 self.proba_distribution, self.policy, self.q_value = \
