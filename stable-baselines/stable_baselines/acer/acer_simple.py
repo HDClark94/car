@@ -12,7 +12,11 @@ from stable_baselines.acer.buffer import Buffer
 from stable_baselines.common import ActorCriticRLModel, tf_util, SetVerbosity, TensorboardWriter
 from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
+
 from stable_baselines.common.evaluate_policy import *
+from stable_baselines.common.evaluate_policy_vecenv import *
+from stable_baselines.common.vec_env import DummyVecEnv
+
 
 
 def strip(var, n_envs, n_steps, flat=False):
@@ -466,6 +470,10 @@ class ACER(ActorCriticRLModel):
               reset_num_timesteps=True, eval_env_string=None):
 
         eval_env = gym.make(eval_env_string)
+        eval_env.set_obs_error(self.action_error_std)
+        #eval_env = SubprocVecEnv([lambda: eval_env for i in range(1)])
+        eval_env = DummyVecEnv([lambda: eval_env])
+
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -550,7 +558,7 @@ class ACER(ActorCriticRLModel):
 
                 self.num_timesteps += self.n_batch
 
-                ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy(self, eval_env)
+                ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy_vecenv(self, eval_env)
                 self.eval_steps.append(steps)
                 self.ep_logs.append(ep_log)
                 self.ep_rews.append(ep_rew)
