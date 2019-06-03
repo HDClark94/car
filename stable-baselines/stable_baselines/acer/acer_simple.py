@@ -471,8 +471,8 @@ class ACER(ActorCriticRLModel):
 
         eval_env = gym.make(eval_env_string)
         eval_env.set_obs_error(self.action_error_std)
-        #eval_env = SubprocVecEnv([lambda: eval_env for i in range(1)])
-        eval_env = DummyVecEnv([lambda: eval_env])
+        eval_env = SubprocVecEnv([lambda: eval_env for i in range(4)])
+        #eval_env = DummyVecEnv([lambda: eval_env])
 
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)

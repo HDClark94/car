@@ -28,8 +28,8 @@ for std in action_errors:
     # set params for env
     env = gym.make(env_string)
     env.set_obs_error(std)
-    #env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
-    env = DummyVecEnv([lambda: env])
+    env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
+    #env = DummyVecEnv([lambda: env])
 
     for i in range(3):
         std_str = "".join(str(std).split("."))
