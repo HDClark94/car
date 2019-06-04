@@ -62,6 +62,9 @@ class Continuous_Action_MountainCarEnv(gym.Env):
     def set_obs_error(self, obsError):
         self.obsError = obsError
 
+    def getTrialType(self):
+        return self.trialtype
+
     def step(self, action):
         force = min(max(action[0], -1.0), 1.0)
 

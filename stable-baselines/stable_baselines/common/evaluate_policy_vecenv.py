@@ -53,6 +53,8 @@ def evaluate_policy_vecenv(model, env, seed=None):
         env.close()
         return episode_log, episode_rew, layer_log, action_log, value_log, trial_type
 
+
+
     elif model.policy == MlpLstmPolicy:
 
         obs, done = env.reset(), False
@@ -62,7 +64,8 @@ def evaluate_policy_vecenv(model, env, seed=None):
         action_log = []
         value_log = []
 
-        trial_type = env.envs[0].env.trialtype
+        trial_type = env.get_attr('trialtype')[0]
+        #trial_type = env.envs[0].env.trialtype
 
         while not done:
             # env.render()
@@ -76,7 +79,9 @@ def evaluate_policy_vecenv(model, env, seed=None):
             value_log.append(value)
             episode_rew += rew
 
-        # print(episode_rew, "=episode reward")
+            done = done[0] # were only interested in the first vectorized environment
+
+        print(episode_rew, "=episode reward")
 
         env.close()
         return episode_log, episode_rew, layer_log, action_log, value_log, trial_type

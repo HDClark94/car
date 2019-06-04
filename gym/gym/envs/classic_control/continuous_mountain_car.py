@@ -59,6 +59,9 @@ class Continuous_MountainCarEnv(gym.Env):
     def set_obs_error(self, obsError):
         self.obsError = obsError
 
+    def getTrialType(self):
+        return self.trialtype
+
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 

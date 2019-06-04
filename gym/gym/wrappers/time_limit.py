@@ -6,6 +6,7 @@ class TimeLimit(Wrapper):
         super(TimeLimit, self).__init__(env)
         self._max_episode_seconds = max_episode_seconds
         self._max_episode_steps = max_episode_steps
+        self.trialtype = "non_beaconed"
 
         self._elapsed_steps = 0
         self._episode_started_at = None
@@ -41,6 +42,7 @@ class TimeLimit(Wrapper):
     def reset(self):
         self._episode_started_at = time.time()
         self._elapsed_steps = 0
+        self.trialtype = self.env.getTrialType()
         return self.env.reset()
 
     def set_obs_error(self, obsError):

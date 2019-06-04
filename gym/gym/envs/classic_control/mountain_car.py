@@ -30,7 +30,6 @@ class MountainCarEnv(gym.Env):
         self.obsError = 0
         self.trialtype = "non_beaconed"
 
-
         self.low = np.array([self.min_position, -self.max_speed])
         self.high = np.array([self.max_position, self.max_speed])
 
@@ -51,9 +50,8 @@ class MountainCarEnv(gym.Env):
     def set_obs_error(self, obsError):
         self.obsError = obsError
 
-    def set_action_dim(self, actionDim):
-        self.actiondim = actionDim
-        self.action_space = spaces.Discrete(self.actiondim)
+    def getTrialType(self):
+        return self.trialtype
 
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
