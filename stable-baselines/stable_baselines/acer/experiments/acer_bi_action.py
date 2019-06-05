@@ -11,8 +11,9 @@ import os
 dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
+
 action_errors = [0, 0.01, 0.1, 1]
-training_steps = 800000
+training_steps = 400000
 
 print("running ACER")
 
@@ -20,7 +21,8 @@ print("running ACER")
 # multiprocess environment
 n_cpu = 4
 env_string = 'MountainCar-v0'
-id = 2000
+
+id=2000
 for std in action_errors:
 
     # set params for env

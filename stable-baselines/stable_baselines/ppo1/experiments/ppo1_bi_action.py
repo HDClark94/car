@@ -37,7 +37,7 @@ for std in action_errors:
         title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = PPO1(MlpPolicy, env, verbose=1, action_error_std=std)
+        model = PPO1(MlpPolicy, env, verbose=0, action_error_std=std)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting

@@ -10,7 +10,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 import os
 
 dir = os.path.dirname(__file__)
-plot_path = os.path.join(dir, 'figures', 'binary_rnn', '')
+plot_path = os.path.join(dir, 'figures', 'binary_action_rnn', '')
 
 action_errors = [0, 0.01, 0.1, 1]
 training_steps = 400000
