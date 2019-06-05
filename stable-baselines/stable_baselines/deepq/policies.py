@@ -47,7 +47,6 @@ class DQNPolicy(BasePolicy):
         with tf.variable_scope("layers", reuse=True):
             self.layers_list = layers_list
 
-
     def _setup_init(self):
         """
         Set up action probability
@@ -119,7 +118,7 @@ class FeedForwardPolicy(DQNPolicy):
 
             with tf.variable_scope("action_value"):
                 if feature_extraction == "cnn":
-                    extracted_features = cnn_extractor(self.processed_obs, **kwargs)  # layers_list not implemented for cnn
+                    extracted_features = cnn_extractor(self.processed_obs, **kwargs)
                     action_out = extracted_features
                 else:
                     extracted_features = tf.layers.flatten(self.processed_obs)
@@ -133,7 +132,7 @@ class FeedForwardPolicy(DQNPolicy):
 
                 action_scores = tf_layers.fully_connected(action_out, num_outputs=self.n_actions, activation_fn=None)
 
-            if self.dueling:  # layers_list not implemented for dueling
+            if self.dueling:
                 with tf.variable_scope("state_value"):
                     state_out = extracted_features
                     for layer_size in layers:
@@ -149,7 +148,6 @@ class FeedForwardPolicy(DQNPolicy):
                 q_out = action_scores
 
         self.q_values = q_out
-        self.initial_state = None
         self._setup_init()
         self._setup_init_layers(layers_list)
 
@@ -160,6 +158,7 @@ class FeedForwardPolicy(DQNPolicy):
         else:
             # Unefficient sampling
             # TODO: replace the loop
+            # maybe with Gumbel-max trick ? (http://amid.fish/humble-gumbel)
             actions = np.zeros((len(obs),), dtype=np.int64)
             for action_idx in range(len(obs)):
                 actions[action_idx] = np.random.choice(self.n_actions, p=actions_proba[action_idx])

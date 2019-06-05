@@ -10,7 +10,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 import os
 
 dir = os.path.dirname(__file__)
-plot_path = os.path.join(dir, 'figures', 'binary_action', '')
+plot_path = os.path.join(dir, 'figures', 'binary_rnn', '')
 
 action_errors = [0, 0.01, 0.1, 1]
 training_steps = 400000
@@ -38,7 +38,7 @@ for std in action_errors:
         title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = ACER(policy, env, verbose=1, action_error_std=std)
+        model = ACER(policy, env, verbose=0, action_error_std=std)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting

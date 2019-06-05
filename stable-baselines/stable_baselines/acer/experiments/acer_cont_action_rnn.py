@@ -9,7 +9,7 @@ from stable_baselines.common.plotting import *
 import os
 
 dir = os.path.dirname(__file__)
-plot_path = os.path.join(dir, 'figures', 'continuous_action', '')
+plot_path = os.path.join(dir, 'figures', 'trinary_rnn', '')
 
 
 action_errors = [0, 0.01, 0.1, 1]

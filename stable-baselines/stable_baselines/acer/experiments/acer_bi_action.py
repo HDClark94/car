@@ -20,7 +20,7 @@ print("running ACER")
 # multiprocess environment
 n_cpu = 4
 env_string = 'MountainCar-v0'
-id = 500
+id = 2000
 for std in action_errors:
 
     # set params for env
@@ -35,7 +35,7 @@ for std in action_errors:
         title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = ACER(MlpPolicy, env, verbose=1, action_error_std=std)
+        model = ACER(MlpPolicy, env, verbose=0, action_error_std=std)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting

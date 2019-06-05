@@ -37,7 +37,7 @@ def evaluate_policy_vecenv(model, env, seed=None):
         trial_type = env.envs[0].env.trialtype
 
         while not done:
-            env.render()
+            #env.render()
             action, _, layers_list, value = model.predict(obs, deterministic=True)
             obs, rew, done, state = env.step(action)
 
@@ -48,7 +48,7 @@ def evaluate_policy_vecenv(model, env, seed=None):
             value_log.append(value)
             episode_rew += rew
 
-        print(episode_rew, "=episode reward")
+        #print(episode_rew, "=episode reward")
 
         env.close()
         return episode_log, episode_rew, layer_log, action_log, value_log, trial_type

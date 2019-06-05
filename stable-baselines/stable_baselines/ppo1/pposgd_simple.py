@@ -1,6 +1,7 @@
 from collections import deque
 import time
 
+import gym
 import tensorflow as tf
 import numpy as np
 from mpi4py import MPI
@@ -9,7 +10,7 @@ from stable_baselines.common import Dataset, explained_variance, fmt_row, zipsam
     TensorboardWriter
 from stable_baselines import logger
 import stable_baselines.common.tf_util as tf_util
-from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
+from stable_baselines.common.policies import ActorCriticPolicy
 from stable_baselines.common.mpi_adam import MpiAdam
 from stable_baselines.common.mpi_moments import mpi_moments
 from stable_baselines.trpo_mpi.utils import traj_segment_generator, add_vtarg_and_adv, flatten_lists
@@ -92,6 +93,13 @@ class PPO1(ActorCriticRLModel):
         if _init_setup_model:
             self.setup_model()
 
+    def _get_pretrain_placeholders(self):
+        policy = self.policy_pi
+        action_ph = policy.pdtype.sample_placeholder([None])
+        if isinstance(self.action_space, gym.spaces.Discrete):
+            return policy.obs_ph, action_ph, policy.policy
+        return policy.obs_ph, action_ph, policy.deterministic_action
+
     def setup_model(self):
         with SetVerbosity(self.verbose):
 
@@ -140,7 +148,7 @@ class PPO1(ActorCriticRLModel):
 
                     # PPO's pessimistic surrogate (L^CLIP)
                     pol_surr = - tf.reduce_mean(tf.minimum(surr1, surr2))
-                    vf_loss = tf.reduce_mean(tf.square(self.policy_pi.value_fn[:, 0] - ret))
+                    vf_loss = tf.reduce_mean(tf.square(self.policy_pi.value_flat - ret))
                     total_loss = pol_surr + pol_entpen + vf_loss
                     losses = [pol_surr, pol_entpen, vf_loss, meankl, meanent]
                     self.loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
@@ -148,7 +156,7 @@ class PPO1(ActorCriticRLModel):
                     tf.summary.scalar('entropy_loss', pol_entpen)
                     tf.summary.scalar('policy_gradient_loss', pol_surr)
                     tf.summary.scalar('value_function_loss', vf_loss)
-                    tf.summary.scalar('approximate_kullback-leiber', meankl)
+                    tf.summary.scalar('approximate_kullback-leibler', meankl)
                     tf.summary.scalar('clip_factor', clip_param)
                     tf.summary.scalar('loss', total_loss)
 
@@ -193,7 +201,8 @@ class PPO1(ActorCriticRLModel):
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="PPO1",
               reset_num_timesteps=True, eval_env_string=None):
 
-        eval_env = gym.make(eval_env_string)
+        if eval_env_string is not None:
+            eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -259,7 +268,7 @@ class PPO1(ActorCriticRLModel):
                     # standardized advantage function estimate
                     atarg = (atarg - atarg.mean()) / atarg.std()
                     dataset = Dataset(dict(ob=obs_ph, ac=action_ph, atarg=atarg, vtarg=tdlamret),
-                                      shuffle=not issubclass(self.policy, LstmPolicy))
+                                      shuffle=not self.policy.recurrent)
                     optim_batchsize = self.optim_batchsize or obs_ph.shape[0]
 
                     # set old parameter values to new parameter values
@@ -336,14 +345,16 @@ class PPO1(ActorCriticRLModel):
                     if self.verbose >= 1 and MPI.COMM_WORLD.Get_rank() == 0:
                         logger.dump_tabular()
 
-                    ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy(self, eval_env, seed=seed)
-                    self.eval_steps.append(timesteps_so_far)
-                    self.ep_logs.append(ep_log)
-                    self.ep_rews.append(ep_rew)
-                    self.layer_log.append(layer_log)
-                    self.action_log.append(action_log)
-                    self.value_log.append(value_log)
-                    self.trialtype_log.append(trialtype)
+                    if eval_env_string is not None:
+                        ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy(self, eval_env,
+                                                                                                      seed=seed)
+                        self.eval_steps.append(timesteps_so_far)
+                        self.ep_logs.append(ep_log)
+                        self.ep_rews.append(ep_rew)
+                        self.layer_log.append(layer_log)
+                        self.action_log.append(action_log)
+                        self.value_log.append(value_log)
+                        self.trialtype_log.append(trialtype)
 
         return self
 
@@ -368,6 +379,6 @@ class PPO1(ActorCriticRLModel):
             "policy_kwargs": self.policy_kwargs
         }
 
-        params = self.sess.run(self.params)
+        params_to_save = self.get_parameters()
 
-        self._save_to_file(save_path, data=data, params=params)
+        self._save_to_file(save_path, data=data, params=params_to_save)
