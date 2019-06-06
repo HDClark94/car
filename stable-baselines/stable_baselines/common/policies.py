@@ -530,7 +530,7 @@ class LstmPolicy(RecurrentActorCriticPolicy):
         self._setup_init()
         self._setup_init_layers(layers_list)
 
-    def step(self, obs, state=None, mask=None, deterministic=True):
+    def step(self, obs, state=None, mask=None, deterministic=False):
         if deterministic:
             #return self.sess.run([self.deterministic_action, self.value_flat, self.snew, self.neglogp],
             #                     {self.obs_ph: obs, self.states_ph: state, self.dones_ph: mask})
@@ -603,7 +603,7 @@ class FeedForwardPolicy(ActorCriticPolicy):
         self._setup_init()
         self._setup_init_layers(layers_list)
 
-    def step(self, obs, state=None, mask=None, deterministic=True):
+    def step(self, obs, state=None, mask=None, deterministic=False):
         if deterministic:
             #action, value, neglogp = self.sess.run([self.deterministic_action, self.value_flat, self.neglogp],
             #                                       {self.obs_ph: obs})

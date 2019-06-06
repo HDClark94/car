@@ -22,6 +22,7 @@ def evaluate_policy(model, env, seed=None):
     while not done:
         # env.render()
         action, _, layers_list, value = model.predict(obs, deterministic=True)
+        #action, _, layers_list, value = model.predict(obs)
         obs, rew, done, state = env.step(action)
 
         # store log for greedy
