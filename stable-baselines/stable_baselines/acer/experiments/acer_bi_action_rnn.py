@@ -20,7 +20,7 @@ print("running ACER")
 # multiprocess environment
 n_cpu = 4
 env_string = 'MountainCar-v0'
-id = 1002
+id = 2000
 policy = MlpLstmPolicy
 
 for std in action_errors:

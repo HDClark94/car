@@ -22,7 +22,7 @@ print("running ACER")
 n_cpu = 4
 env_string = 'MountainCar-v0'
 
-id=2000
+id=3000
 for std in action_errors:
 
     # set params for env
