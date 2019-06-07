@@ -233,9 +233,10 @@ class DQN(OffPolicyRLModel):
 
                 episode_rewards[-1] += rew
                 if done:
-                    maybe_is_success = info.get('is_success')
-                    if maybe_is_success is not None:
-                        episode_successes.append(float(maybe_is_success))
+                    # commented out 070619 hc
+                    #maybe_is_success = info.get('is_success')
+                    #if maybe_is_success is not None:
+                    #    episode_successes.append(float(maybe_is_success))
                     if not isinstance(self.env, VecEnv):
                         obs = self.env.reset()
                     episode_rewards.append(0.0)
