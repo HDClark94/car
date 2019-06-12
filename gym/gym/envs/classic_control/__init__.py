@@ -11,3 +11,4 @@ from gym.envs.classic_control.continuous_action_mountain_car_state_velovisual im
 from gym.envs.classic_control.mountain_carJinghua import MountainCarJinghuaEnv
 
 from gym.envs.classic_control.mountain_carJinghua_original import MountainCarJinghuaOriginalEnv
+from gym.envs.classic_control.cue_continuous_mountain_car import CueContinuousMountainCarEnv
