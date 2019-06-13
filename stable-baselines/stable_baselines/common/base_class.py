@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import glob
 import warnings
+from collections import OrderedDict
 
 import cloudpickle
 import numpy as np
@@ -9,7 +10,7 @@ import gym
 import tensorflow as tf
 
 from stable_baselines.common import set_global_seeds
-from stable_baselines.common.policies import LstmPolicy, get_policy_from_name, ActorCriticPolicy
+from stable_baselines.common.policies import get_policy_from_name, ActorCriticPolicy
 from stable_baselines.common.vec_env import VecEnvWrapper, VecEnv, DummyVecEnv
 from stable_baselines import logger
 
@@ -27,7 +28,7 @@ class BaseRLModel(ABC):
     """
 
     def __init__(self, policy, env, verbose=0, *, requires_vec_env, policy_base, policy_kwargs=None):
-        if isinstance(policy, str):
+        if isinstance(policy, str) and policy_base is not None:
             self.policy = get_policy_from_name(policy_base, policy)
         else:
             self.policy = policy
@@ -40,6 +41,10 @@ class BaseRLModel(ABC):
         self.n_envs = None
         self._vectorize_action = False
         self.num_timesteps = 0
+        self.graph = None
+        self.sess = None
+        self.params = None
+        self._param_load_ops = None
 
         if env is not None:
             if isinstance(env, str):
@@ -95,7 +100,7 @@ class BaseRLModel(ABC):
             assert isinstance(env, VecEnv), \
                 "Error: the environment passed is not a vectorized environment, however {} requires it".format(
                     self.__class__.__name__)
-            assert not issubclass(self.policy, LstmPolicy) or self.n_envs == env.num_envs, \
+            assert not self.policy.recurrent or self.n_envs == env.num_envs, \
                 "Error: the environment passed must have the same number of environments as the model was trained on." \
                 "This is due to the Lstm policy not being capable of changing the number of environments."
             self.n_envs = env.num_envs
@@ -149,6 +154,151 @@ class BaseRLModel(ABC):
                              "set_env(self, env) method.")
         if seed is not None:
             set_global_seeds(seed)
+
+    @abstractmethod
+    def get_parameter_list(self):
+        """
+        Get tensorflow Variables of model's parameters
+
+        This includes all variables necessary for continuing training (saving / loading).
+
+        :return: (list) List of tensorflow Variables
+        """
+        pass
+
+    def get_parameters(self):
+        """
+        Get current model parameters as dictionary of variable name -> ndarray.
+
+        :return: (OrderedDict) Dictionary of variable name -> ndarray of model's parameters.
+        """
+        parameters = self.get_parameter_list()
+        parameter_values = self.sess.run(parameters)
+        return_dictionary = OrderedDict((param.name, value) for param, value in zip(parameters, parameter_values))
+        return return_dictionary
+
+    def _setup_load_operations(self):
+        """
+        Create tensorflow operations for loading model parameters
+        """
+        # Assume tensorflow graphs are static -> check
+        # that we only call this function once
+        if self._param_load_ops is not None:
+            raise RuntimeError("Parameter load operations have already been created")
+        # For each loadable parameter, create appropiate
+        # placeholder and an assign op, and store them to
+        # self.load_param_ops as dict of variable.name -> (placeholder, assign)
+        loadable_parameters = self.get_parameter_list()
+        # Use OrderedDict to store order for backwards compatibility with
+        # list-based params
+        self._param_load_ops = OrderedDict()
+        with self.graph.as_default():
+            for param in loadable_parameters:
+                placeholder = tf.placeholder(dtype=param.dtype, shape=param.shape)
+                # param.name is unique (tensorflow variables have unique names)
+                self._param_load_ops[param.name] = (placeholder, param.assign(placeholder))
+
+    @abstractmethod
+    def _get_pretrain_placeholders(self):
+        """
+        Return the placeholders needed for the pretraining:
+        - obs_ph: observation placeholder
+        - actions_ph will be population with an action from the environement
+            (from the expert dataset)
+        - deterministic_actions_ph: e.g., in the case of a gaussian policy,
+            the mean.
+
+        :return: ((tf.placeholder)) (obs_ph, actions_ph, deterministic_actions_ph)
+        """
+        pass
+
+    def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4,
+                 adam_epsilon=1e-8, val_interval=None):
+        """
+        Pretrain a model using behavior cloning:
+        supervised learning given an expert dataset.
+
+        NOTE: only Box and Discrete spaces are supported for now.
+
+        :param dataset: (ExpertDataset) Dataset manager
+        :param n_epochs: (int) Number of iterations on the training set
+        :param learning_rate: (float) Learning rate
+        :param adam_epsilon: (float) the epsilon value for the adam optimizer
+        :param val_interval: (int) Report training and validation losses every n epochs.
+            By default, every 10th of the maximum number of epochs.
+        :return: (BaseRLModel) the pretrained model
+        """
+        continuous_actions = isinstance(self.action_space, gym.spaces.Box)
+        discrete_actions = isinstance(self.action_space, gym.spaces.Discrete)
+
+        assert discrete_actions or continuous_actions, 'Only Discrete and Box action spaces are supported'
+
+        # Validate the model every 10% of the total number of iteration
+        if val_interval is None:
+            # Prevent modulo by zero
+            if n_epochs < 10:
+                val_interval = 1
+            else:
+                val_interval = int(n_epochs / 10)
+
+        with self.graph.as_default():
+            with tf.variable_scope('pretrain'):
+                if continuous_actions:
+                    obs_ph, actions_ph, deterministic_actions_ph = self._get_pretrain_placeholders()
+                    loss = tf.reduce_mean(tf.square(actions_ph - deterministic_actions_ph))
+                else:
+                    obs_ph, actions_ph, actions_logits_ph = self._get_pretrain_placeholders()
+                    # actions_ph has a shape if (n_batch,), we reshape it to (n_batch, 1)
+                    # so no additional changes is needed in the dataloader
+                    actions_ph = tf.expand_dims(actions_ph, axis=1)
+                    one_hot_actions = tf.one_hot(actions_ph, self.action_space.n)
+                    loss = tf.nn.softmax_cross_entropy_with_logits_v2(
+                        logits=actions_logits_ph,
+                        labels=tf.stop_gradient(one_hot_actions)
+                    )
+                    loss = tf.reduce_mean(loss)
+                optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, epsilon=adam_epsilon)
+                optim_op = optimizer.minimize(loss, var_list=self.params)
+
+            self.sess.run(tf.global_variables_initializer())
+
+        if self.verbose > 0:
+            print("Pretraining with Behavior Cloning...")
+
+        for epoch_idx in range(int(n_epochs)):
+            train_loss = 0.0
+            # Full pass on the training set
+            for _ in range(len(dataset.train_loader)):
+                expert_obs, expert_actions = dataset.get_next_batch('train')
+                feed_dict = {
+                    obs_ph: expert_obs,
+                    actions_ph: expert_actions,
+                }
+                train_loss_, _ = self.sess.run([loss, optim_op], feed_dict)
+                train_loss += train_loss_
+
+            train_loss /= len(dataset.train_loader)
+
+            if self.verbose > 0 and (epoch_idx + 1) % val_interval == 0:
+                val_loss = 0.0
+                # Full pass on the validation set
+                for _ in range(len(dataset.val_loader)):
+                    expert_obs, expert_actions = dataset.get_next_batch('val')
+                    val_loss_, = self.sess.run([loss], {obs_ph: expert_obs,
+                                                        actions_ph: expert_actions})
+                    val_loss += val_loss_
+
+                val_loss /= len(dataset.val_loader)
+                if self.verbose > 0:
+                    print("==== Training progress {:.2f}% ====".format(100 * (epoch_idx + 1) / n_epochs))
+                    print('Epoch {}'.format(epoch_idx + 1))
+                    print("Training loss: {:.6f}, Validation loss: {:.6f}".format(train_loss, val_loss))
+                    print()
+            # Free memory
+            del expert_obs, expert_actions
+        if self.verbose > 0:
+            print("Pretraining done.")
+        return self
 
     @abstractmethod
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="run",
@@ -206,6 +356,70 @@ class BaseRLModel(ABC):
         :return: (np.ndarray) the model's action probability
         """
         pass
+
+    def load_parameters(self, load_path_or_dict, exact_match=True):
+        """
+        Load model parameters from a file or a dictionary
+
+        Dictionary keys should be tensorflow variable names, which can be obtained
+        with ``get_parameters`` function. If ``exact_match`` is True, dictionary
+        should contain keys for all model's parameters, otherwise RunTimeError
+        is raised. If False, only variables included in the dictionary will be updated.
+
+        This does not load agent's hyper-parameters.
+
+        .. warning::
+            This function does not update trainer/optimizer variables (e.g. momentum).
+            As such training after using this function may lead to less-than-optimal results.
+
+        :param load_path_or_dict: (str or file-like or dict) Save parameter location
+            or dict of parameters as variable.name -> ndarrays to be loaded.
+        :param exact_match: (bool) If True, expects load dictionary to contain keys for
+            all variables in the model. If False, loads parameters only for variables
+            mentioned in the dictionary. Defaults to True.
+        """
+        # Make sure we have assign ops
+        if self._param_load_ops is None:
+            self._setup_load_operations()
+
+        params = None
+        if isinstance(load_path_or_dict, dict):
+            # Assume `load_path_or_dict` is dict of variable.name -> ndarrays we want to load
+            params = load_path_or_dict
+        elif isinstance(load_path_or_dict, list):
+            warnings.warn("Loading model parameters from a list. This has been replaced " +
+                          "with parameter dictionaries with variable names and parameters. " +
+                          "If you are loading from a file, consider re-saving the file.",
+                          DeprecationWarning)
+            # Assume `load_path_or_dict` is list of ndarrays.
+            # Create param dictionary assuming the parameters are in same order
+            # as `get_parameter_list` returns them.
+            params = dict()
+            for i, param_name in enumerate(self._param_load_ops.keys()):
+                params[param_name] = load_path_or_dict[i]
+        else:
+            # Assume a filepath or file-like.
+            # Use existing deserializer to load the parameters
+            _, params = BaseRLModel._load_from_file(load_path_or_dict)
+
+        feed_dict = {}
+        param_update_ops = []
+        # Keep track of not-updated variables
+        not_updated_variables = set(self._param_load_ops.keys())
+        for param_name, param_value in params.items():
+            placeholder, assign_op = self._param_load_ops[param_name]
+            feed_dict[placeholder] = param_value
+            # Create list of tf.assign operations for sess.run
+            param_update_ops.append(assign_op)
+            # Keep track which variables are updated
+            not_updated_variables.remove(param_name)
+
+        # Check that we updated all parameters if exact_match=True
+        if exact_match and len(not_updated_variables) > 0:
+            raise RuntimeError("Load dictionary did not contain all variables. " +
+                               "Missing variables: {}".format(", ".join(not_updated_variables)))
+
+        self.sess.run(param_update_ops, feed_dict=feed_dict)
 
     @abstractmethod
     def save(self, save_path):
@@ -364,7 +578,7 @@ class ActorCriticRLModel(BaseRLModel):
         vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
-        actions, _, states, _ = self.step(observation, state, mask, deterministic=deterministic)
+        actions, values, states, _, layers_list = self.step(observation, state, mask, deterministic=deterministic)
 
         clipped_actions = actions
         # Clip the actions to avoid out of bound error
@@ -376,7 +590,7 @@ class ActorCriticRLModel(BaseRLModel):
                 raise ValueError("Error: The environment must be vectorized when using recurrent policies.")
             clipped_actions = clipped_actions[0]
 
-        return clipped_actions, states
+        return clipped_actions, states, layers_list, values
 
     def action_probability(self, observation, state=None, mask=None, actions=None):
         if state is None:
@@ -436,6 +650,9 @@ class ActorCriticRLModel(BaseRLModel):
 
         return actions_proba
 
+    def get_parameter_list(self):
+        return self.params
+
     @abstractmethod
     def save(self, save_path):
         pass
@@ -455,10 +672,7 @@ class ActorCriticRLModel(BaseRLModel):
         model.set_env(env)
         model.setup_model()
 
-        restores = []
-        for param, loaded_p in zip(model.params, params):
-            restores.append(param.assign(loaded_p))
-        model.sess.run(restores)
+        model.load_parameters(params)
 
         return model
 
@@ -488,7 +702,7 @@ class OffPolicyRLModel(BaseRLModel):
 
     @abstractmethod
     def learn(self, total_timesteps, callback=None, seed=None,
-              log_interval=100, tb_log_name="run", reset_num_timesteps=True):
+              log_interval=100, tb_log_name="run", reset_num_timesteps=True, replay_wrapper=None):
         pass
 
     @abstractmethod
@@ -519,15 +733,43 @@ class _UnvecWrapper(VecEnvWrapper):
         super().__init__(venv)
         assert venv.num_envs == 1, "Error: cannot unwrap a environment wrapper that has more than one environment."
 
+    def __getattr__(self, attr):
+        if attr in self.__dict__:
+            return getattr(self, attr)
+        return getattr(self.venv, attr)
+
+    def __set_attr__(self, attr, value):
+        if attr in self.__dict__:
+            setattr(self, attr, value)
+        else:
+            setattr(self.venv, attr, value)
+
+    def compute_reward(self, achieved_goal, desired_goal, _info):
+        return float(self.venv.env_method('compute_reward', achieved_goal, desired_goal, _info)[0])
+
+    @staticmethod
+    def unvec_obs(obs):
+        """
+        :param obs: (Union[np.ndarray, dict])
+        :return: (Union[np.ndarray, dict])
+        """
+        if not isinstance(obs, dict):
+            return obs[0]
+        obs_ = OrderedDict()
+        for key in obs.keys():
+            obs_[key] = obs[key][0]
+        del obs
+        return obs_
+
     def reset(self):
-        return self.venv.reset()[0]
+        return self.unvec_obs(self.venv.reset())
 
     def step_async(self, actions):
         self.venv.step_async([actions])
 
     def step_wait(self):
-        actions, values, states, information = self.venv.step_wait()
-        return actions[0], float(values[0]), states[0], information[0]
+        obs, rewards, dones, information = self.venv.step_wait()
+        return self.unvec_obs(obs), float(rewards[0]), dones[0], information[0]
 
     def render(self, mode='human'):
         return self.venv.render(mode=mode)
@@ -596,8 +838,8 @@ class TensorboardWriter:
         :return: (int) latest run number
         """
         max_run_id = 0
-        for path in glob.glob(self.tensorboard_log_path + "/{}_[0-9]*".format(self.tb_log_name)):
-            file_name = path.split("/")[-1]
+        for path in glob.glob("{}/{}_[0-9]*".format(self.tensorboard_log_path, self.tb_log_name)):
+            file_name = path.split(os.sep)[-1]
             ext = file_name.split("_")[-1]
             if self.tb_log_name == "_".join(file_name.split("_")[:-1]) and ext.isdigit() and int(ext) > max_run_id:
                 max_run_id = int(ext)

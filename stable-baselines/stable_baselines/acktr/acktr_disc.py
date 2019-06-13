@@ -3,10 +3,11 @@ Discrete acktr
 """
 
 import time
+from collections import deque
 
 import tensorflow as tf
 import numpy as np
-from gym.spaces import Box
+from gym.spaces import Box, Discrete
 
 from stable_baselines import logger
 from stable_baselines.common import explained_variance, ActorCriticRLModel, tf_util, SetVerbosity, TensorboardWriter
@@ -14,10 +15,8 @@ from stable_baselines.a2c.a2c import A2CRunner
 from stable_baselines.a2c.utils import Scheduler, find_trainable_variables, calc_entropy, mse, \
     total_episode_reward_logger
 from stable_baselines.acktr import kfac
-from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
-
-from stable_baselines.common.evaluate_policy import *
-import gym
+from stable_baselines.common.policies import ActorCriticPolicy, RecurrentActorCriticPolicy
+from stable_baselines.ppo2.ppo2 import safe_mean
 
 
 class ACKTR(ActorCriticRLModel):
@@ -34,7 +33,7 @@ class ACKTR(ActorCriticRLModel):
     :param vf_fisher_coef: (float) The weight for the fisher loss on the value function
     :param learning_rate: (float) The initial learning rate for the RMS prop optimizer
     :param max_grad_norm: (float) The clipping value for the maximum gradient
-    :param kfac_clip: (float) gradient clipping for Kullback leiber
+    :param kfac_clip: (float) gradient clipping for Kullback-Leibler
     :param lr_schedule: (str) The type of scheduler for the learning rate update ('linear', 'constant',
                         'double_linear_con', 'middle_drop' or 'double_middle_drop')
     :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 tensorflow debug
@@ -46,7 +45,7 @@ class ACKTR(ActorCriticRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, actiondim=2, gamma=0.99, nprocs=1, n_steps=20, ent_coef=0.01, vf_coef=0.25, vf_fisher_coef=1.0,
+    def __init__(self, policy, env, gamma=0.99, nprocs=1, n_steps=20, ent_coef=0.01, vf_coef=0.25, vf_fisher_coef=1.0,
                  learning_rate=0.25, max_grad_norm=0.5, kfac_clip=0.001, lr_schedule='linear', verbose=0,
                  tensorboard_log=None, _init_setup_model=True, async_eigen_decomp=False,
                  policy_kwargs=None, full_tensorboard_log=False, action_error_std=0):
@@ -101,7 +100,6 @@ class ACKTR(ActorCriticRLModel):
         self.trained = False
 
         self.action_error_std = action_error_std
-        self.actiondim = actiondim
 
         self.ep_logs = []
         self.ep_rews = []
@@ -109,6 +107,12 @@ class ACKTR(ActorCriticRLModel):
 
         if _init_setup_model:
             self.setup_model()
+
+    def _get_pretrain_placeholders(self):
+        policy = self.train_model
+        if isinstance(self.action_space, Discrete):
+            return policy.obs_ph, self.action_ph, policy.policy
+        raise NotImplementedError("WIP: ACKTR does not support Continuous actions yet.")
 
     def setup_model(self):
         with SetVerbosity(self.verbose):
@@ -125,7 +129,7 @@ class ACKTR(ActorCriticRLModel):
 
                 n_batch_step = None
                 n_batch_train = None
-                if issubclass(self.policy, LstmPolicy):
+                if issubclass(self.policy, RecurrentActorCriticPolicy):
                     n_batch_step = self.n_envs
                     n_batch_train = self.n_envs * self.n_steps
 
@@ -231,7 +235,7 @@ class ACKTR(ActorCriticRLModel):
                   self.pg_lr_ph: cur_lr}
         if states is not None:
             td_map[self.train_model.states_ph] = states
-            td_map[self.train_model.masks_ph] = masks
+            td_map[self.train_model.dones_ph] = masks
 
         if writer is not None:
             # run loss backprop with summary, but once every 10 runs save the metadata (memory, compute time, ...)
@@ -254,8 +258,6 @@ class ACKTR(ActorCriticRLModel):
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="ACKTR",
               reset_num_timesteps=True, eval_env_string=None):
-
-        eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -301,9 +303,13 @@ class ACKTR(ActorCriticRLModel):
             else:
                 enqueue_threads = []
 
+            # Training stats (when using Monitor wrapper)
+            ep_info_buf = deque(maxlen=100)
+
             for update in range(1, total_timesteps // self.n_batch + 1):
                 # true_reward is the reward without discount
-                obs, states, rewards, masks, actions, values, true_reward = runner.run()
+                obs, states, rewards, masks, actions, values, ep_infos, true_reward = runner.run()
+                ep_info_buf.extend(ep_infos)
                 policy_loss, value_loss, policy_entropy = self._train_step(obs, states, rewards, masks, actions, values,
                                                                            self.num_timesteps // (self.n_batch + 1),
                                                                            writer)
@@ -331,15 +337,12 @@ class ACKTR(ActorCriticRLModel):
                     logger.record_tabular("policy_loss", float(policy_loss))
                     logger.record_tabular("value_loss", float(value_loss))
                     logger.record_tabular("explained_variance", float(explained_var))
+                    if len(ep_info_buf) > 0 and len(ep_info_buf[0]) > 0:
+                        logger.logkv('ep_reward_mean', safe_mean([ep_info['r'] for ep_info in ep_info_buf]))
+                        logger.logkv('ep_len_mean', safe_mean([ep_info['l'] for ep_info in ep_info_buf]))
                     logger.dump_tabular()
 
                 self.num_timesteps += self.n_batch + 1
-
-                # evaluate policy and log
-                ep_log, ep_rew = evaluate_policy(self, eval_env)
-                self.eval_steps.append(update)
-                self.ep_logs.append(ep_log)
-                self.ep_rews.append(ep_rew)
 
             coord.request_stop()
             coord.join(enqueue_threads)
@@ -367,6 +370,6 @@ class ACKTR(ActorCriticRLModel):
             "policy_kwargs": self.policy_kwargs
         }
 
-        params = self.sess.run(self.params)
+        params_to_save = self.get_parameters()
 
-        self._save_to_file(save_path, data=data, params=params)
+        self._save_to_file(save_path, data=data, params=params_to_save)

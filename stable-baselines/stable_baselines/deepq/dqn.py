@@ -3,7 +3,6 @@ from functools import partial
 import tensorflow as tf
 import numpy as np
 import gym
-import matplotlib.pyplot as plot
 
 from stable_baselines import logger, deepq
 from stable_baselines.common import tf_util, OffPolicyRLModel, SetVerbosity, TensorboardWriter
@@ -13,7 +12,6 @@ from stable_baselines.deepq.replay_buffer import ReplayBuffer, PrioritizedReplay
 from stable_baselines.deepq.policies import DQNPolicy
 from stable_baselines.a2c.utils import find_trainable_variables, total_episode_reward_logger
 from stable_baselines.common.evaluate_policy import *
-
 
 class DQN(OffPolicyRLModel):
     """
@@ -51,7 +49,7 @@ class DQN(OffPolicyRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, actiondim=2, gamma=0.99, learning_rate=5e-4, buffer_size=50000, exploration_fraction=0.1,
+    def __init__(self, policy, env, gamma=0.99, learning_rate=5e-4, buffer_size=50000, exploration_fraction=0.1,
                  exploration_final_eps=0.02, train_freq=1, batch_size=32, checkpoint_freq=10000, checkpoint_path=None,
                  learning_starts=1000, target_network_update_freq=500, prioritized_replay=False,
                  prioritized_replay_alpha=0.6, prioritized_replay_beta0=0.4, prioritized_replay_beta_iters=None,
@@ -96,15 +94,21 @@ class DQN(OffPolicyRLModel):
         self.summary = None
         self.episode_reward = None
         self.action_error_std = action_error_std
-        self.actiondim = actiondim
 
         self.ep_logs = []
         self.ep_rews = []
         self.eval_steps = []
+        self.layer_log = []
+        self.value_log = []
+        self.trialtype_log = []
+        self.action_log = []
 
         if _init_setup_model:
             self.setup_model()
 
+    def _get_pretrain_placeholders(self):
+        policy = self.step_model
+        return policy.obs_ph, tf.placeholder(tf.int32, [None]), policy.q_values
 
     def setup_model(self):
 
@@ -148,9 +152,10 @@ class DQN(OffPolicyRLModel):
                 self.summary = tf.summary.merge_all()
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="DQN",
-              reset_num_timesteps=True, eval_env_string=None, eval_freq=1000):
+              reset_num_timesteps=True, replay_wrapper=None, eval_env_string=None, eval_freq=1000):
 
-        eval_env = gym.make(eval_env_string)
+        if eval_env_string is not None:
+            eval_env = gym.make(eval_env_string)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -171,18 +176,24 @@ class DQN(OffPolicyRLModel):
             else:
                 self.replay_buffer = ReplayBuffer(self.buffer_size)
                 self.beta_schedule = None
+
+            if replay_wrapper is not None:
+                assert not self.prioritized_replay, "Prioritized replay buffer is not supported by HER"
+                self.replay_buffer = replay_wrapper(self.replay_buffer)
+
+
             # Create the schedule for exploration starting from 1.
             self.exploration = LinearSchedule(schedule_timesteps=int(self.exploration_fraction * total_timesteps),
                                               initial_p=1.0,
                                               final_p=self.exploration_final_eps)
 
             episode_rewards = [0.0]
+            episode_successes = []
             obs = self.env.reset()
             reset = True
             self.episode_reward = np.zeros((1,))
 
-            for steps in range(total_timesteps):
-
+            for _ in range(total_timesteps):
                 if callback is not None:
                     # Only stop training if return value is False, not when it is None. This is for backwards
                     # compatibility with callbacks that have no return statement.
@@ -209,10 +220,9 @@ class DQN(OffPolicyRLModel):
                     action = self.act(np.array(obs)[None], update_eps=update_eps, **kwargs)[0]
                 env_action = action
                 reset = False
-                new_obs, rew, done, _ = self.env.step(env_action)
+                new_obs, rew, done, info = self.env.step(env_action)
                 # Store transition in the replay buffer.
                 self.replay_buffer.add(obs, action, rew, new_obs, float(done))
-
                 obs = new_obs
 
                 if writer is not None:
@@ -223,6 +233,10 @@ class DQN(OffPolicyRLModel):
 
                 episode_rewards[-1] += rew
                 if done:
+                    # commented out 070619 hc
+                    #maybe_is_success = info.get('is_success')
+                    #if maybe_is_success is not None:
+                    #    episode_successes.append(float(maybe_is_success))
                     if not isinstance(self.env, VecEnv):
                         obs = self.env.reset()
                     episode_rewards.append(0.0)
@@ -274,17 +288,25 @@ class DQN(OffPolicyRLModel):
                 if self.verbose >= 1 and done and log_interval is not None and len(episode_rewards) % log_interval == 0:
                     logger.record_tabular("steps", self.num_timesteps)
                     logger.record_tabular("episodes", num_episodes)
+                    if len(episode_successes) > 0:
+                        logger.logkv("success rate", np.mean(episode_successes[-100:]))
                     logger.record_tabular("mean 100 episode reward", mean_100ep_reward)
                     logger.record_tabular("% time spent exploring",
                                           int(100 * self.exploration.value(self.num_timesteps)))
                     logger.dump_tabular()
 
-                # evaluate policy and log
-                if steps%eval_freq==0:
-                    ep_log, ep_rew = evaluate_policy(self, eval_env)
-                    self.eval_steps.append(steps)
-                    self.ep_logs.append(ep_log)
-                    self.ep_rews.append(ep_rew)
+                if eval_env_string is not None:
+                    # evaluate policy and log
+                    if self.num_timesteps % eval_freq == 0:
+                        ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy(self, eval_env,
+                                                                                                      seed=seed)
+                        self.eval_steps.append(self.num_timesteps)
+                        self.ep_logs.append(ep_log)
+                        self.ep_rews.append(ep_rew)
+                        self.layer_log.append(layer_log)
+                        self.action_log.append(action_log)
+                        self.value_log.append(value_log)
+                        self.trialtype_log.append(trialtype)
 
                 self.num_timesteps += 1
 
@@ -296,12 +318,12 @@ class DQN(OffPolicyRLModel):
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
         with self.sess.as_default():
-            actions, _, _ = self.step_model.step(observation, deterministic=deterministic)
+            actions, values, _, layers_list = self.step_model.step(observation, deterministic=deterministic)
 
         if not vectorized_env:
             actions = actions[0]
 
-        return actions, None
+        return actions, None, layers_list, values
 
     def action_probability(self, observation, state=None, mask=None, actions=None):
         observation = np.array(observation)
@@ -325,6 +347,9 @@ class DQN(OffPolicyRLModel):
             actions_proba = actions_proba[0]
 
         return actions_proba
+
+    def get_parameter_list(self):
+        return self.params
 
     def save(self, save_path):
         # params
@@ -354,9 +379,9 @@ class DQN(OffPolicyRLModel):
             "policy_kwargs": self.policy_kwargs
         }
 
-        params = self.sess.run(self.params)
+        params_to_save = self.get_parameters()
 
-        self._save_to_file(save_path, data=data, params=params)
+        self._save_to_file(save_path, data=data, params=params_to_save)
 
     @classmethod
     def load(cls, load_path, env=None, **kwargs):
@@ -373,9 +398,6 @@ class DQN(OffPolicyRLModel):
         model.set_env(env)
         model.setup_model()
 
-        restores = []
-        for param, loaded_p in zip(model.params, params):
-            restores.append(param.assign(loaded_p))
-        model.sess.run(restores)
+        model.load_parameters(params)
 
         return model

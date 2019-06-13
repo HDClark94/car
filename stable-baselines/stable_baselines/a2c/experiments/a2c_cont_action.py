@@ -13,7 +13,6 @@ plot_path = os.path.join(dir, 'figures', 'continuous_action', '')
 
 
 action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
-actionDim = 3
 training_steps = 400000
 
 print("running A2C")
@@ -28,7 +27,6 @@ for std in action_errors:
     # set params for env
     env = gym.make(env_string)
     env.set_obs_error(std)
-    env.set_action_dim(actionDim)
     env = SubprocVecEnv([lambda: env for i in range(n_cpu)])
 
     for i in range(3):
@@ -36,10 +34,10 @@ for std in action_errors:
             std_str = str(std).split(".")[1]
         else:
             std_str = str(std)
-        title = "bivel_std=" + std_str + "_i=" + str(i)
+        title = "contvel_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = A2C(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=actionDim)
+        model = A2C(MlpPolicy, env, verbose=0, action_error_std=std)
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting

@@ -39,15 +39,14 @@ class Continuous_MountainCarEnv(gym.Env):
         self.rewarded_count = 0
         self.velocity_shift = 0.05
         self.obsError = 0
+        self.trialtype = "non_beaconed"
 
         self.low = np.array([self.min_position, -self.max_speed])
         self.high = np.array([self.max_position, self.max_speed])
 
         self.viewer = None
 
-        # change action space between 2 and 3 for binary vs continous velocity
-        self.actiondim = 3
-        self.action_space = spaces.Discrete(self.actiondim)
+        self.action_space = spaces.Discrete(3)
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
 
         self.seed()
@@ -60,9 +59,8 @@ class Continuous_MountainCarEnv(gym.Env):
     def set_obs_error(self, obsError):
         self.obsError = obsError
 
-    def set_action_dim(self, actionDim):
-        self.actiondim = actionDim
-        self.action_space = spaces.Discrete(self.actiondim)
+    def getTrialType(self):
+        return self.trialtype
 
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
@@ -71,7 +69,7 @@ class Continuous_MountainCarEnv(gym.Env):
         velocity += (action-1)*self.velocity_shift  # continuous (3 action space)
         velocity = np.clip(velocity, 0, self.max_speed)
 
-        self.obs[0] += velocity + (action-1)*np.random.normal(0, self.obsError)
+        self.obs[0] += velocity + (action-1)*self.np_random.normal(0, self.obsError)
         self.obs[0] = np.clip(self.obs[0], self.min_position, self.max_position)
 
         position += velocity
@@ -95,6 +93,7 @@ class Continuous_MountainCarEnv(gym.Env):
         self.state = (position, velocity)
 
         self.obs[1] = self.state[1]  # velocity is same
+        #self.obs[0] = 0
 
         return np.array(self.obs), reward, done, np.array(self.state)
 

@@ -3,7 +3,6 @@ import gym
 import numpy as np
 import tensorflow as tf
 from gym.spaces import Discrete, Box
-import matplotlib.pyplot as plot
 
 from stable_baselines import logger
 from stable_baselines.a2c.utils import batch_to_seq, seq_to_batch, Scheduler, find_trainable_variables, EpisodeStats, \
@@ -11,8 +10,13 @@ from stable_baselines.a2c.utils import batch_to_seq, seq_to_batch, Scheduler, fi
 from stable_baselines.acer.buffer import Buffer
 from stable_baselines.common import ActorCriticRLModel, tf_util, SetVerbosity, TensorboardWriter
 from stable_baselines.common.runners import AbstractEnvRunner
-from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
+from stable_baselines.common.policies import ActorCriticPolicy, RecurrentActorCriticPolicy
+
 from stable_baselines.common.evaluate_policy import *
+from stable_baselines.common.evaluate_policy_vecenv import *
+from stable_baselines.common.vec_env import DummyVecEnv
+
+
 
 
 def strip(var, n_envs, n_steps, flat=False):
@@ -97,7 +101,7 @@ class ACER(ActorCriticRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, actiondim=2, gamma=0.99, n_steps=20, num_procs=1, q_coef=0.5, ent_coef=0.01, max_grad_norm=10,
+    def __init__(self, policy, env, gamma=0.99, n_steps=20, num_procs=1, q_coef=0.5, ent_coef=0.01, max_grad_norm=10,
                  learning_rate=7e-4, lr_schedule='linear', rprop_alpha=0.99, rprop_epsilon=1e-5, buffer_size=5000,
                  replay_ratio=4, replay_start=1000, correction_term=10.0, trust_region=True,
                  alpha=0.99, delta=1, verbose=0, tensorboard_log=None,
@@ -149,14 +153,24 @@ class ACER(ActorCriticRLModel):
         self.episode_reward = None
 
         self.action_error_std = action_error_std
-        self.actiondim = actiondim
 
         self.ep_logs = []
         self.ep_rews = []
         self.eval_steps = []
+        self.layer_log = []
+        self.value_log = []
+        self.trialtype_log = []
+        self.action_log = []
 
         if _init_setup_model:
             self.setup_model()
+
+    def _get_pretrain_placeholders(self):
+        policy = self.step_model
+        action_ph = policy.pdtype.sample_placeholder([None])
+        if isinstance(self.action_space, Discrete):
+            return policy.obs_ph, action_ph, policy.policy
+        raise NotImplementedError('Only discrete actions are supported for ACER for now')
 
     def set_env(self, env):
         if env is not None:
@@ -189,7 +203,7 @@ class ACER(ActorCriticRLModel):
                 self.sess = tf_util.make_session(num_cpu=self.num_procs, graph=self.graph)
 
                 n_batch_step = None
-                if issubclass(self.policy, LstmPolicy):
+                if issubclass(self.policy, RecurrentActorCriticPolicy):
                     n_batch_step = self.n_envs
                 n_batch_train = self.n_envs * (self.n_steps + 1)
 
@@ -231,7 +245,7 @@ class ACER(ActorCriticRLModel):
                     # (var)_i = variable index by action at step i
                     # shape is [n_envs * (n_steps + 1)]
                     if continuous:
-                        value = train_model.value_fn[:, 0]
+                        value = train_model.value_flat
                     else:
                         value = tf.reduce_sum(train_model.policy_proba * train_model.q_value, axis=-1)
 
@@ -438,9 +452,9 @@ class ACER(ActorCriticRLModel):
 
         if states is not None:
             td_map[self.train_model.states_ph] = states
-            td_map[self.train_model.masks_ph] = masks
+            td_map[self.train_model.dones_ph] = masks
             td_map[self.polyak_model.states_ph] = states
-            td_map[self.polyak_model.masks_ph] = masks
+            td_map[self.polyak_model.dones_ph] = masks
 
         if writer is not None:
             # run loss backprop with summary, but once every 10 runs save the metadata (memory, compute time, ...)
@@ -462,7 +476,11 @@ class ACER(ActorCriticRLModel):
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="ACER",
               reset_num_timesteps=True, eval_env_string=None):
 
-        eval_env = gym.make(eval_env_string)
+        if eval_env_string is not None:
+            eval_env = gym.make(eval_env_string)
+            eval_env.set_obs_error(self.action_error_std)
+            # eval_env = SubprocVecEnv([lambda: eval_env for i in range(4)])
+            eval_env = DummyVecEnv([lambda: eval_env])
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
 
@@ -488,7 +506,6 @@ class ACER(ActorCriticRLModel):
             for steps in range(0, total_timesteps, self.n_batch):
                 enc_obs, obs, actions, rewards, mus, dones, masks = runner.run()
                 episode_stats.feed(rewards, dones)
-
 
                 if buffer is not None:
                     buffer.put(enc_obs, actions, rewards, mus, dones, masks)
@@ -547,10 +564,15 @@ class ACER(ActorCriticRLModel):
 
                 self.num_timesteps += self.n_batch
 
-                ep_log, ep_rew = evaluate_policy(self, eval_env)
-                self.eval_steps.append(steps)
-                self.ep_logs.append(ep_log)
-                self.ep_rews.append(ep_rew)
+                if eval_env_string is not None:
+                    ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy_vecenv(self, eval_env)
+                    self.eval_steps.append(steps)
+                    self.ep_logs.append(ep_log)
+                    self.ep_rews.append(ep_rew)
+                    self.layer_log.append(layer_log)
+                    self.action_log.append(action_log)
+                    self.value_log.append(value_log)
+                    self.trialtype_log.append(trialtype)
 
         return self
 
@@ -576,9 +598,9 @@ class ACER(ActorCriticRLModel):
             "policy_kwargs": self.policy_kwargs
         }
 
-        params = self.sess.run(self.params)
+        params_to_save = self.get_parameters()
 
-        self._save_to_file(save_path, data=data, params=params)
+        self._save_to_file(save_path, data=data, params=params_to_save)
 
 
 class _Runner(AbstractEnvRunner):
@@ -634,7 +656,7 @@ class _Runner(AbstractEnvRunner):
         enc_obs = [self.obs]
         mb_obs, mb_actions, mb_mus, mb_dones, mb_rewards = [], [], [], [], []
         for _ in range(self.n_steps):
-            actions, _, states, _ = self.model.step(self.obs, self.states, self.dones)
+            actions, _, states, _, layers_list = self.model.step(self.obs, self.states, self.dones)
             mus = self.model.proba_step(self.obs, self.states, self.dones)
             mb_obs.append(np.copy(self.obs))
             mb_actions.append(actions)
@@ -649,7 +671,6 @@ class _Runner(AbstractEnvRunner):
             self.states = states
             self.dones = dones
             self.obs = obs
-
             mb_rewards.append(rewards)
             enc_obs.append(obs)
         mb_obs.append(np.copy(self.obs))

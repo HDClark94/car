@@ -8,19 +8,18 @@ from stable_baselines import PPO1
 import numpy as np
 from stable_baselines.common.plotting import *
 import os
+from stable_baselines.common.misc_util import set_global_seeds
 
 dir = os.path.dirname(__file__)
-plot_path = os.path.join(dir, 'figures', 'test', '')
+plot_path = os.path.join(dir, 'figures', 'trinary_action', '')
 
-action_errors = [0, 0.0001, 0.001, 0.01, 0.1, 1]
-actionDim = 3
+action_errors = [0, 0.01, 0.1, 1]
 training_steps = 400000
-
+seed = 3
 print("running PPO1")
+id = 300
 
 # with error
-# multiprocess environment
-n_cpu = 4
 env_string = 'MountainCarContinuous-v0'
 
 for std in action_errors:
@@ -28,21 +27,25 @@ for std in action_errors:
     # set params for env
     env = gym.make(env_string)
     env.set_obs_error(std)
-    env.set_action_dim(actionDim)
+    env.seed(seed)
+    set_global_seeds(seed)
+
     env = DummyVecEnv([lambda: env])
 
     for i in range(3):
-        if len(str(std).split("."))>1:
-            std_str = str(std).split(".")[1]
-        else:
-            std_str = str(std)
-        title = "bivel_std=" + std_str + "_i=" + str(i)
+        std_str = "".join(str(std).split("."))
+
+        id_string = str(id).rjust(4, "0")
+        title = "id=" + id_string + "_std=" + std_str + "_i=" + str(i)
         print("Processing std = ", std)
 
-        model = PPO1(MlpPolicy, env, verbose=0, action_error_std=std, actiondim=actionDim)
-        model.learn(total_timesteps=training_steps, eval_env_string=env_string)
+        model = PPO1(MlpPolicy, env, verbose=0, action_error_std=std)
+        model.learn(total_timesteps=training_steps, eval_env_string=env_string, seed=seed)
 
         # for plotting
-        plot_summary(model.ep_logs, plot_path, title)
+        plot_summary_with_fn(model.ep_logs, model.value_log, model.trialtype_log, plot_path, title)
+        plot_network_activation(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
+                                title + "_last_trial_layer_")
 
         del model # remove to demonstrate saving and loading
+        id += 1

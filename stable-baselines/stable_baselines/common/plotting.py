@@ -12,18 +12,214 @@ from stable_baselines.common import ActorCriticRLModel, tf_util, SetVerbosity, T
 from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
 
-def plot_summary(behaviour, save_path, title):
+def plot_network_activation_dqn(layer_behaviour, behaviour, trialtype_log, save_path, title):
+    # TODO plot activations for last example for beaconed, probe and non beaconed
+    # currently hardcoded for 64 units and 4 layers (2 per network)
 
-    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', figsize=(50,50))
-    raster(behaviour, ax1)
-    accum_reward(behaviour, ax2)
-    speed_of_last(behaviour, ax3)
-    average_ep_reward(behaviour, ax4)
+    last_trial_log = np.array(behaviour[-1])
+    pos = [i[0] for i in last_trial_log[:, 4]] # vector of positions
+    last_trial_layers = np.array(layer_behaviour[-1])
+
+    fig_l1, ax_l1 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    fig_l2, ax_l2 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+
+    x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
+
+    count = 0
+    for i in range(8):
+        for j in range(8):
+            activations = last_trial_layers[:, :, :, count]
+
+            ax_l1[i, j].scatter(pos, activations[:, 0])
+            ax_l2[i, j].scatter(pos, activations[:, 1])
+            count += 1
+
+            ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+            ax_l2[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+
+            ax_l1[i, j].set_xlim([-0.6, 1])  # track limits
+            ax_l2[i, j].set_xlim([-0.6, 1])  # track limits
+
+            y = [-1.2, -1.2, 1.2, 1.2]
+            ax_l1[i, j].fill(x, y, color="k", alpha=0.2)
+            y = [-1.2, -1.2, 1.2, 1.2]
+            ax_l2[i, j].fill(x, y, color="k", alpha=0.2)
+
+            ax_l1[i, j].set_ylim([-1.1, 1.1])  # track limits
+            ax_l2[i, j].set_ylim([-1.1, 1.1])  # track limits
+
+    fig_l1.tight_layout()
+    fig_l2.tight_layout()
+
+    fig_l1.savefig(save_path + title + "l1_qnet")
+    fig_l2.savefig(save_path + title + "l2_qnet")
+
+    fig_l1.clf()
+    fig_l2.clf()
+
+def plot_network_activation(layer_behaviour, behaviour, trialtype_log, save_path, title):
+    # TODO plot activations for last example for beaconed, probe and non beaconed
+    # currently hardcoded for 64 units and 4 layers (2 per network)
+
+    last_trial_log = np.array(behaviour[-1])
+    pos = [i[0] for i in last_trial_log[:, 4]] # vector of positions
+    last_trial_layers = np.array(layer_behaviour[-1])
+
+    fig_l1, ax_l1 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    fig_l2, ax_l2 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    fig_l3, ax_l3 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    fig_l4, ax_l4 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+
+    x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
+
+    count = 0
+    for i in range(8):
+        for j in range(8):
+            activations = last_trial_layers[:, :, :, count]
+
+            ax_l1[i, j].scatter(pos, activations[:, 0])
+            ax_l2[i, j].scatter(pos, activations[:, 1])
+            ax_l3[i, j].scatter(pos, activations[:, 2])
+            ax_l4[i, j].scatter(pos, activations[:, 3])
+            count += 1
+
+            ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+            ax_l2[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+            ax_l3[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+            ax_l4[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+
+            ax_l1[i, j].set_xlim([-0.6, 1])  # track limits
+            ax_l2[i, j].set_xlim([-0.6, 1])  # track limits
+            ax_l3[i, j].set_xlim([-0.6, 1])  # track limits
+            ax_l4[i, j].set_xlim([-0.6, 1])  # track limits
+
+            y = [-1.2, -1.2, 1.2, 1.2]
+            ax_l1[i, j].fill(x, y, color="k", alpha=0.2)
+            y = [-1.2, -1.2, 1.2, 1.2]
+            ax_l2[i, j].fill(x, y, color="k", alpha=0.2)
+            y = [-1.2, -1.2, 1.2, 1.2]
+            ax_l3[i, j].fill(x, y, color="k", alpha=0.2)
+            y = [-1.2, -1.2, 1.2, 1.2]
+            ax_l4[i, j].fill(x, y, color="k", alpha=0.2)
+
+            ax_l1[i, j].set_ylim([-1.1, 1.1])  # track limits
+            ax_l2[i, j].set_ylim([-1.1, 1.1])  # track limits
+            ax_l3[i, j].set_ylim([-1.1, 1.1])  # track limits
+            ax_l4[i, j].set_ylim([-1.1, 1.1])  # track limits
+
+    fig_l1.tight_layout()
+    fig_l2.tight_layout()
+    fig_l3.tight_layout()
+    fig_l4.tight_layout()
+
+    fig_l1.savefig(save_path + title + "l1_pn")
+    fig_l2.savefig(save_path + title + "l1_vn")
+    fig_l3.savefig(save_path + title + "l2_pn")
+    fig_l4.savefig(save_path + title + "l2_vn")
+
+    fig_l1.clf()
+    fig_l2.clf()
+    fig_l3.clf()
+    fig_l4.clf()
+
+
+def plot_network_activation_rnn(layer_behaviour, behaviour, trialtype_log, save_path, title):
+    # TODO plot activations for last example for beaconed, probe and non beaconed
+    # currently hardcoded for 64 units and 4 layers (2 per network)
+
+    last_trial_log = np.array(behaviour[-1])
+    pos = [i[0] for i in last_trial_log[:, 4]] # vector of positions
+    last_trial_layers = np.array(layer_behaviour[-1])
+
+    fig_l1, ax_l1 = plt.subplots(16, 16, sharex=True, sharey=True, figsize=(20, 20))
+
+    x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
+    y = [-1.2, -1.2, 1.2, 1.2]
+
+    count = 0
+    for i in range(16):
+        for j in range(16):
+            activations = last_trial_layers[:, :, :, count]
+
+            ax_l1[i, j].scatter(pos, activations[:, 0])
+            ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+            ax_l1[i, j].set_xlim([-0.6, 1])  # track limits
+            ax_l1[i, j].fill(x, y, color="k", alpha=0.2)
+            ax_l1[i, j].set_ylim([-1.1, 1.1])  # track limits
+
+            count += 1
+    fig_l1.tight_layout()
+    fig_l1.savefig(save_path + title + "l1_pn")
+    fig_l1.clf()
+
+def plot_summary_with_fn(behaviour, values, trialtype_log, save_path, title):
+
+    # TODO add plots for actions and values of last trial
+
+    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    raster(behaviour, trialtype_log, ax1)
+    #accum_reward(behaviour, ax2)
+    speed_of_last(behaviour, trialtype_log, ax3)
+    average_ep_reward(behaviour, ax2)
+    #actions_of_last(behaviour, actions, ax5)
+    value_fn_of_last(behaviour, values, ax4)
     f.tight_layout()
     #plt.show()
 
     f.savefig(save_path + title)
 
+    f.clf()
+
+def plot_summary(behaviour, trialtype_log, save_path, title):
+
+    # TODO add plots for actions and values of last trial
+
+    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    raster(behaviour, trialtype_log, ax1)
+    #accum_reward(behaviour, ax2)
+    speed_of_last(behaviour, trialtype_log, ax3)
+    average_ep_reward(behaviour, ax2)
+    #actions_of_last(behaviour, actions, ax5)
+    #value_fn_of_last(behaviour, values, ax4)
+    f.tight_layout()
+    #plt.show()
+
+    f.savefig(save_path + title)
+
+    f.clf()
+
+
+def actions_of_last(behaviour, actions, ax=None):
+    ax.set(xlabel="Position", ylabel="Action Selected")
+    ax.set_xlim([-0.6, 1])  # track limits
+
+    last_trial = np.array(behaviour[-1])
+    last_trial_actions = np.array(actions[-1])
+
+    pos = [i[0] for i in last_trial[:, 4]]  # vector of positions
+
+    return ax.plot(pos, last_trial_actions, color='k')
+
+
+def value_fn_of_last(behaviour, values, ax=None):
+    ax.set(xlabel="Position", ylabel="Value")
+    ax.set_xlim([-0.6, 1])  # track limits
+
+    last_trial = np.array(behaviour[-1])
+    last_trial_values = np.array(values[-1])
+
+    pos = [i[0] for i in last_trial[:, 4]]  # vector of positions
+
+
+    ymin = min(last_trial_values) - 0.1*max(last_trial_values)
+    ymax = max(last_trial_values) + 0.1*max(last_trial_values)
+    ax.set_ylim([ymin, ymax])
+
+    x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
+    y = [ymin, ymin, ymax, ymax]
+    ax.fill(x, y, color="k", alpha=0.2)
+
+    return ax.plot(pos, last_trial_values, color='k')
 
 def average_ep_reward(behaviour, ax=None):
     # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
@@ -71,8 +267,18 @@ def accum_reward(behaviour, ax=None):
 
     return ax.plot(np.arange(1,no_trials+1), accum_rew,  color='k')
 
+def last_trials_of_trialtype(behaviour, trialtype_log, trialtype_wanted, last_n=5):
+    trialtype_log = np.array(trialtype_log)
+    idx = np.where(trialtype_log == trialtype_wanted)[-1][-last_n:]  # picks last n elements of array that meets trialtype condition, returns index
 
-def speed_of_last(behaviour, ax=None):
+    tmp = []
+    for i in idx:
+        tmp.append(behaviour[i])
+    behaviour = tmp
+
+    return behaviour
+
+def speed_of_last(behaviour, trialtype_log, ax=None):
     # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
     # plt.title(title)
     ax.set(xlabel='Track Position', ylabel='Speed')
@@ -83,16 +289,31 @@ def speed_of_last(behaviour, ax=None):
     ax.set_xlim([-0.6, 1])  # track limits
     ax.set_ylim([0, 0.25])
 
-    last_trial = np.array(behaviour[-1])
+    last_trials_b = last_trials_of_trialtype(behaviour, trialtype_log, "beaconed")
+    last_trials_nb = last_trials_of_trialtype(behaviour, trialtype_log, "non_beaconed")
+    last_trials_p = last_trials_of_trialtype(behaviour, trialtype_log, "probe")
 
-    v = [i[1] for i in last_trial[:, 4]]  # vector of velocities
-    pos = [i[0] for i in last_trial[:, 4]] # vector of positions
+    if len(last_trials_b)>0:
+        for trial in last_trials_b:
+            v = [i[1] for i in np.array(trial)[:, 4]]  # vector of velocities
+            pos = [i[0] for i in np.array(trial)[:, 4]] # vector of positions
+            ax.plot(pos, v, color='k')
 
-    return ax.plot(pos, v, color='k')
+    if len(last_trials_nb) > 0:
+        for trial in last_trials_nb:
+            v = [i[1] for i in np.array(trial)[:, 4]]  # vector of velocities
+            pos = [i[0] for i in np.array(trial)[:, 4]]  # vector of positions
+            ax.plot(pos, v, color='b')
 
-def raster(behaviour, ax=None):
+    if len(last_trials_p) > 0:
+        for trial in last_trials_p:
+            v = [i[1] for i in np.array(trial)[:, 4]]  # vector of velocities
+            pos = [i[0] for i in np.array(trial)[:, 4]]  # vector of positions
+            ax.plot(pos, v, color='r')
 
-    # behaviour is var_log with vector entries [action, rew, obs, float(done), tn]
+def raster(behaviour, trialtype_log, ax=None):
+
+    # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
     no_trials = len(behaviour)
     all_trial_stopping = []    # initialise empty list
 
@@ -101,10 +322,10 @@ def raster(behaviour, ax=None):
         trial = np.array(trial)
 
         v = [i[1] for i in trial[:, 4]]  # vector of states per time step in trial (velocity)
-        idx = np.array(np.array(v) == 0.0)  # vector of boolean per time step showing v = 0
+        idx = np.array(np.round(np.array(v), decimals=3) == 0.0)  # vector of boolean per time step showing v = 0
         pos = np.array([i[0] for i in trial[:, 4]])  # vector of positions
         all_trial_stopping.append(pos[idx])  # appendable list of positions for which v = 0
-        print(pos[idx], "=pos[idx]")
+        #print(pos[idx], "=pos[idx]")
 
     #plt.title(title)
     ax.set(xlabel='Track Position', ylabel='Trial')
@@ -116,9 +337,22 @@ def raster(behaviour, ax=None):
     ax.set_ylim([1, no_trials])
     ax.set_xlim([-0.6, 1])  # track limits
 
-    print(np.shape(all_trial_stopping))
+    #print(np.shape(all_trial_stopping), "shape of all_trial_stopping")
+    #print("LAST = ", all_trial_stopping[-1], "  last ", behaviour[-1])
+
+
+    colors = []
+    for trialtype in trialtype_log:
+        if trialtype == "beaconed":
+            colors.append("k")
+        elif trialtype == "non_beaconed":
+            colors.append("b")
+        elif trialtype == "probe":
+            colors.append("r")
+        else:
+            print("trial type does not match string beaconed probe or non_beaconed")
 
     # Draw a spike raster plot
-    return ax.eventplot(all_trial_stopping, linewidths=5, color='k')
+    return ax.eventplot(all_trial_stopping, linewidths=5, color=colors)
 
 
