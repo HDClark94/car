@@ -12,3 +12,6 @@ from gym.envs.classic_control.mountain_carJinghua import MountainCarJinghuaEnv
 
 from gym.envs.classic_control.mountain_carJinghua_original import MountainCarJinghuaOriginalEnv
 from gym.envs.classic_control.cue_continuous_mountain_car import CueContinuousMountainCarEnv
+
+from gym.envs.classic_control.GC_mountain_car import GC_MountainCarEnv
+from gym.envs.classic_control.GC_continuous_mountain_car import GC_Continuous_MountainCarEnv

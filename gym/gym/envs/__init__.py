@@ -113,6 +113,21 @@ register(
     reward_threshold=-110.0,
 )
 
+
+register(
+    id='GC_MountainCar-v0',
+    entry_point='gym.envs.classic_control:GC_MountainCarEnv',
+    max_episode_steps=200,
+    reward_threshold=-110.0,
+)
+
+register(
+    id='GC_MountainCarContinuous-v0',
+    entry_point='gym.envs.classic_control:GC_Continuous_MountainCarEnv',
+    max_episode_steps=200,
+    reward_threshold=-110.0,
+)
+
 register(
     id='state_velovisual_MountainCarContinuous_Action-v0',
     entry_point='gym.envs.classic_control:state_velovisual_Continuous_Action_MountainCarEnv',
