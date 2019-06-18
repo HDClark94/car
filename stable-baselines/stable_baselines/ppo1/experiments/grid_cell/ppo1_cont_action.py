@@ -14,7 +14,7 @@ dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'trinary_action', '')
 
 action_errors = [0, 0.001, 0.01, 0.1]
-training_steps = 4000
+training_steps = 400000
 seed = 3
 print("running PPO1")
 id = 0
