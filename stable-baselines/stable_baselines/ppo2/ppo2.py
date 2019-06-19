@@ -13,6 +13,7 @@ from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import ActorCriticPolicy, RecurrentActorCriticPolicy
 from stable_baselines.a2c.utils import total_episode_reward_logger
 
+from stable_baselines.common.evaluate_policy import *
 
 class PPO2(ActorCriticRLModel):
     """
@@ -50,7 +51,7 @@ class PPO2(ActorCriticRLModel):
     def __init__(self, policy, env, gamma=0.99, n_steps=128, ent_coef=0.01, learning_rate=2.5e-4, vf_coef=0.5,
                  max_grad_norm=0.5, lam=0.95, nminibatches=4, noptepochs=4, cliprange=0.2, cliprange_vf=None,
                  verbose=0, tensorboard_log=None, _init_setup_model=True, policy_kwargs=None,
-                 full_tensorboard_log=False):
+                 full_tensorboard_log=False, action_error_std=0):
 
         super(PPO2, self).__init__(policy=policy, env=env, verbose=verbose, requires_vec_env=True,
                                    _init_setup_model=_init_setup_model, policy_kwargs=policy_kwargs)
@@ -95,6 +96,16 @@ class PPO2(ActorCriticRLModel):
         self.n_batch = None
         self.summary = None
         self.episode_reward = None
+
+        self.action_error_std = action_error_std
+
+        self.ep_logs = []
+        self.ep_rews = []
+        self.eval_steps = []
+        self.layer_log = []
+        self.action_log = []
+        self.value_log = []
+        self.trialtype_log = []
 
         if _init_setup_model:
             self.setup_model()
@@ -303,7 +314,11 @@ class PPO2(ActorCriticRLModel):
         return policy_loss, value_loss, policy_entropy, approxkl, clipfrac
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=1, tb_log_name="PPO2",
-              reset_num_timesteps=True):
+              reset_num_timesteps=True,  eval_env_string=None):
+
+        if eval_env_string is not None:
+            eval_env = gym.make(eval_env_string)
+
         # Transform to callable if needed
         self.learning_rate = get_schedule_fn(self.learning_rate)
         self.cliprange = get_schedule_fn(self.cliprange)
@@ -398,6 +413,17 @@ class PPO2(ActorCriticRLModel):
                     # compatibility with callbacks that have no return statement.
                     if callback(locals(), globals()) is False:
                         break
+
+                if eval_env_string is not None:
+                    ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy(self, eval_env,
+                                                                                                  seed=seed)
+                    self.eval_steps.append(update)
+                    self.ep_logs.append(ep_log)
+                    self.ep_rews.append(ep_rew)
+                    self.layer_log.append(layer_log)
+                    self.action_log.append(action_log)
+                    self.value_log.append(value_log)
+                    self.trialtype_log.append(trialtype)
 
             return self
 

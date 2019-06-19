@@ -16,7 +16,6 @@ from stable_baselines.common.mpi_moments import mpi_moments
 from stable_baselines.trpo_mpi.utils import traj_segment_generator, add_vtarg_and_adv, flatten_lists
 from stable_baselines.a2c.utils import total_episode_reward_logger
 from stable_baselines.common.evaluate_policy import *
-import gym
 
 class PPO1(ActorCriticRLModel):
     """
