@@ -21,7 +21,7 @@ print("running PPO1")
 # multiprocess environment
 
 env_string = 'MountainCar-v0'
-id = 300
+id = 900
 
 for std in action_errors:
 
