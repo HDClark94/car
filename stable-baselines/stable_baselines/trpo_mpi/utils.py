@@ -48,6 +48,10 @@ def traj_segment_generator(policy, env, horizon, reward_giver=None, gail=False):
     rews = np.zeros(horizon, 'float32')
     vpreds = np.zeros(horizon, 'float32')
     dones = np.zeros(horizon, 'int32')
+
+    # added by Harry
+    infos = np.array([observation for _ in range(horizon)])
+
     actions = np.array([action for _ in range(horizon)])
     prev_actions = actions.copy()
     states = policy.initial_state
@@ -72,7 +76,8 @@ def traj_segment_generator(policy, env, horizon, reward_giver=None, gail=False):
                     "ep_rets": ep_rets,
                     "ep_lens": ep_lens,
                     "ep_true_rets": ep_true_rets,
-                    "total_timestep": current_it_len
+                    "total_timestep": current_it_len,
+                    "info": infos
             }
             _, vpred, _, _, _ = policy.step(observation.reshape(-1, *observation.shape))
             # Be careful!!! if you change the downstream algorithm to aggregate
@@ -102,6 +107,9 @@ def traj_segment_generator(policy, env, horizon, reward_giver=None, gail=False):
         rews[i] = rew
         true_rews[i] = true_rew
         dones[i] = done
+
+        # added by Harry
+        infos[i] = _info
 
         cur_ep_ret += rew
         cur_ep_true_ret += true_rew
