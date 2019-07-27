@@ -18,7 +18,7 @@ action_errors = [0]
 training_steps = 400000
 seed = 3
 print("running PPO2")
-id = 20
+id = 40
 policy = MlpLstmPolicy
 # with error
 env_string = 'state_velovisual_MountainCarContinuous-v0'

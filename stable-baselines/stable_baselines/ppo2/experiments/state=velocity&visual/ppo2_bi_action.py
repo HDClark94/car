@@ -22,7 +22,7 @@ print("running PPO2")
 # multiprocess environment
 policy = MlpLstmPolicy
 env_string ='state_velovisual_MountainCar-v0'
-id = 20
+id = 40
 
 for std in action_errors:
 
