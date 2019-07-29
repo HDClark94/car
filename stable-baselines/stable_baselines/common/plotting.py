@@ -66,9 +66,17 @@ def plot_network_activation(layer_behaviour, behaviour, trialtype_log, save_path
     last_trial_layers = np.array(layer_behaviour[-1])
 
     fig_l1, ax_l1 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    plt.xlabel("common X")
+    plt.ylabel("common Y")
     fig_l2, ax_l2 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    plt.xlabel("common X")
+    plt.ylabel("common Y")
     fig_l3, ax_l3 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    plt.xlabel("common X")
+    plt.ylabel("common Y")
     fig_l4, ax_l4 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    plt.xlabel("common X")
+    plt.ylabel("common Y")
 
     x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
 
@@ -83,10 +91,16 @@ def plot_network_activation(layer_behaviour, behaviour, trialtype_log, save_path
             ax_l4[i, j].scatter(pos, activations[:, 3])
             count += 1
 
-            ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
-            ax_l2[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
-            ax_l3[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
-            ax_l4[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+            if j==0:
+                ax_l1[i, j].set(ylabel= "Unit activation")
+                ax_l2[i, j].set(ylabel= "Unit activation")
+                ax_l3[i, j].set(ylabel= "Unit activation")
+                ax_l4[i, j].set(ylabel= "Unit activation")
+            if i==7:
+                ax_l1[i, j].set(xlabel = 'Track Position')
+                ax_l2[i, j].set(xlabel = 'Track Position')
+                ax_l3[i, j].set(xlabel = 'Track Position')
+                ax_l4[i, j].set(xlabel = 'Track Position')
 
             ax_l1[i, j].set_xlim([-0.6, 1])  # track limits
             ax_l2[i, j].set_xlim([-0.6, 1])  # track limits
@@ -142,7 +156,13 @@ def plot_network_activation_rnn(layer_behaviour, behaviour, trialtype_log, save_
             activations = last_trial_layers[:, :, :, count]
 
             ax_l1[i, j].scatter(pos, activations[:, 0])
-            ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+
+            if j==0:
+                ax_l1[i, j].set(ylabel= "Unit activation")
+            if i==15:
+                ax_l1[i, j].set(xlabel = 'Track Position')
+
+            #ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
             ax_l1[i, j].set_xlim([-0.6, 1])  # track limits
             ax_l1[i, j].fill(x, y, color="k", alpha=0.2)
             ax_l1[i, j].set_ylim([-1.1, 1.1])  # track limits

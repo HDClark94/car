@@ -13,6 +13,7 @@ dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
 action_errors = [0, 0.001, 0.01, 0.1]
+action_errors = [0]
 training_steps = 400000
 
 print("running PPO1")
@@ -21,7 +22,7 @@ print("running PPO1")
 # multiprocess environment
 
 env_string = 'GC_MountainCar-v0'
-id = 0
+id = 30
 
 for std in action_errors:
 
@@ -30,7 +31,7 @@ for std in action_errors:
     env.set_obs_error(std)
     env = DummyVecEnv([lambda: env])
 
-    for i in range(3):
+    for i in range(30):
         std_str = "".join(str(std).split("."))
 
         id_string = str(id).rjust(4, "0")

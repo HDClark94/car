@@ -13,6 +13,8 @@ dir = os.path.dirname(__file__)
 plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
 action_errors = [0, 0.01, 0.1, 1]
+action_errors = [0]
+
 training_steps = 400000
 
 print("running PPO1")
@@ -21,7 +23,7 @@ print("running PPO1")
 # multiprocess environment
 
 env_string = 'MountainCar-v0'
-id = 250
+id = 9888
 
 for std in action_errors:
 
@@ -30,7 +32,7 @@ for std in action_errors:
     env.set_obs_error(std)
     env = DummyVecEnv([lambda: env])
 
-    for i in range(3):
+    for i in range(10):
         std_str = "".join(str(std).split("."))
 
         id_string = str(id).rjust(4, "0")
@@ -41,11 +43,10 @@ for std in action_errors:
         model.learn(total_timesteps=training_steps, eval_env_string=env_string)
 
         # for plotting
-        plot_rasta_test(model.ep_logs, plot_path, title)
 
-        #plot_summary_with_fn(model.ep_logs, model.value_log, model.trialtype_log, plot_path, title)
-        #plot_network_activation(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
-        #                        title + "_last_trial_layer_")
+        plot_summary_with_fn(model.ep_logs, model.value_log, model.trialtype_log, plot_path, title)
+        plot_network_activation(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
+                                title + "_last_trial_layer_")
 
 
         del model # remove to demonstrate saving and loading

@@ -22,7 +22,7 @@ print("running PPO2")
 # multiprocess environment
 policy = MlpLstmPolicy
 env_string = 'GC_MountainCar-v0'
-id = 20
+id = 70
 
 for std in action_errors:
 
@@ -31,7 +31,7 @@ for std in action_errors:
     env.set_obs_error(std)
     env = DummyVecEnv([lambda: env])
 
-    for i in range(10):
+    for i in range(30):
         std_str = "".join(str(std).split("."))
 
         id_string = str(id).rjust(4, "0")

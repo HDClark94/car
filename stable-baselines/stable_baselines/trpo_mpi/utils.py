@@ -109,7 +109,7 @@ def traj_segment_generator(policy, env, horizon, reward_giver=None, gail=False):
         dones[i] = done
 
         # added by Harry
-        infos[i] = _info
+        #infos[i] = _info
 
         cur_ep_ret += rew
         cur_ep_true_ret += true_rew

@@ -350,13 +350,12 @@ class PPO1(ActorCriticRLModel):
                     #self.eval_steps.append(timesteps_so_far)
                     #[episode[timestep[action, rew, obs, float(done), state]]]
 
-                    self.ep_logs.append([seg["info"], seg["dones"]])
                     #self.ep_rews.append(ep_rew)
                     #self.layer_log.append(layer_log)
                     #self.action_log.append(action_log)
                     #self.value_log.append(value_log)
                     #self.trialtype_log.append(trialtype)
-                    '''
+
                     if eval_env_string is not None:
                         ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy(self, eval_env,
                                                                                                       seed=seed)
@@ -367,7 +366,7 @@ class PPO1(ActorCriticRLModel):
                         self.action_log.append(action_log)
                         self.value_log.append(value_log)
                         self.trialtype_log.append(trialtype)
-                    '''
+
 
         return self
 
