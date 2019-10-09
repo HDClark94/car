@@ -22,7 +22,7 @@ print("running PPO2")
 # multiprocess environment
 policy = MlpLstmPolicy
 env_string = 'GC_MountainCar-v0'
-id = 70
+id = 0
 
 for std in action_errors:
 
@@ -50,6 +50,11 @@ for std in action_errors:
             plot_summary_with_fn(model.ep_logs, model.value_log, model.trialtype_log, plot_path, title)
             plot_network_activation_rnn(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
                                     title + "_last_trial_layer_")
+
+            np.save(plot_path+title+"ep_logs",       model.ep_logs)
+            np.save(plot_path+title+"value_log",     model.value_log)
+            np.save(plot_path+title+"trialtype_log", model.trialtype_log)
+            np.save(plot_path+title+"layer_log",     model.layer_log)
 
         del model # remove to demonstrate saving and loading
         id += 1

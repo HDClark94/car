@@ -18,7 +18,7 @@ action_errors = [0]
 training_steps = 400000
 seed = 3
 print("running PPO2")
-id = 40
+id = 51
 policy = MlpLstmPolicy
 # with error
 env_string = 'GC_MountainCarContinuous-v0'
@@ -33,7 +33,7 @@ for std in action_errors:
 
     env = DummyVecEnv([lambda: env])
 
-    for i in range(10):
+    for i in range(30):
         std_str = "".join(str(std).split("."))
 
         id_string = str(id).rjust(4, "0")
@@ -52,6 +52,11 @@ for std in action_errors:
             plot_summary_with_fn(model.ep_logs, model.value_log, model.trialtype_log, plot_path, title)
             plot_network_activation_rnn(model.layer_log, model.ep_logs, model.trialtype_log, plot_path,
                                         title + "_last_trial_layer_")
+
+            np.save(plot_path + title + "ep_logs", model.ep_logs)
+            np.save(plot_path + title + "value_log", model.value_log)
+            np.save(plot_path + title + "trialtype_log", model.trialtype_log)
+            np.save(plot_path + title + "layer_log", model.layer_log)
 
         del model # remove to demonstrate saving and loading
         id += 1

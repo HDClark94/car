@@ -20,20 +20,20 @@ class GC_MountainCarEnv(gym.Env):
 
     def __init__(self):
         self.min_position = -1.2
-        self.max_position = 1.2
+        self.max_position = 1.0
         self.max_speed = 0.2
         self.goal_position = 0.5  # to 1 decimal place
         self.goal_width = 0.2  # to 1 decimal place
         self.hillscale = 0
         self.rewarded = False
         self.rewarded_count = 0
-        self.velocity_shift = 0.05
+        self.velocity_shift = 0.025
         self.obsError = 0
         self.min_visual_input = 0
         self.max_visual_input = 1
         self.trial_count = 0
         self.trialtype = "beaconed"
-        self.start_pos = -0.6
+        self.start_pos = 0
         self.visual_input = 0
 
         self.gridcell = gridcell()
@@ -62,7 +62,7 @@ class GC_MountainCarEnv(gym.Env):
 
     def SetTrialType(self):
         self.trial_count += 1
-        if self.trial_count % 5 == 0:
+        if self.trial_count % 2 == 0:
             self.trialtype = "non_beaconed"
         else:
             self.trialtype = "beaconed"
@@ -110,7 +110,7 @@ class GC_MountainCarEnv(gym.Env):
                 self.rewarded = True
                 reward = 100
 
-        if(position>(self.goal_position+(self.goal_width*2))) and self.rewarded:
+        if(position>(self.goal_position+(self.goal_width*2.5))) and self.rewarded:
             done = True
 
         self.state = (position, velocity)

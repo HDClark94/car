@@ -1,9 +1,12 @@
+import numpy as np
+import matplotlib.pyplot as plt
+'''
 import time
 import gym
-import numpy as np
+
 import tensorflow as tf
 from gym.spaces import Discrete, Box
-import matplotlib.pyplot as plt
+
 from stable_baselines import logger
 from stable_baselines.a2c.utils import batch_to_seq, seq_to_batch, Scheduler, find_trainable_variables, EpisodeStats, \
     get_by_index, check_shape, avg_norm, gradient_add, q_explained_variance, total_episode_reward_logger
@@ -11,6 +14,7 @@ from stable_baselines.acer.buffer import Buffer
 from stable_baselines.common import ActorCriticRLModel, tf_util, SetVerbosity, TensorboardWriter
 from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
+'''
 
 def plot_network_activation_dqn(layer_behaviour, behaviour, trialtype_log, save_path, title):
     # TODO plot activations for last example for beaconed, probe and non beaconed
@@ -163,7 +167,7 @@ def plot_network_activation_rnn(layer_behaviour, behaviour, trialtype_log, save_
                 ax_l1[i, j].set(xlabel = 'Track Position')
 
             #ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
-            ax_l1[i, j].set_xlim([-0.6, 1])  # track limits
+            ax_l1[i, j].set_xlim([0, 1])  # track limits
             ax_l1[i, j].fill(x, y, color="k", alpha=0.2)
             ax_l1[i, j].set_ylim([-1.1, 1.1])  # track limits
 
