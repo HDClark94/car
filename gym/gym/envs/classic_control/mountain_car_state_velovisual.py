@@ -65,6 +65,9 @@ class state_velovisual_MountainCarEnv(gym.Env):
         else:
             self.trialtype = "beaconed"
 
+    def getTrialType(self):
+        return self.trialtype
+
     def visual_input(self, position, reward_zone_sight=0.4):
 
         '''

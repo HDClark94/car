@@ -1,4 +1,5 @@
 README.rst
+setup.py
 gym/__init__.py
 gym/core.py
 gym/error.py
@@ -33,8 +34,13 @@ gym/envs/classic_control/__init__.py
 gym/envs/classic_control/acrobot.py
 gym/envs/classic_control/cartpole.py
 gym/envs/classic_control/continuous_action_mountain_car.py
+gym/envs/classic_control/continuous_action_mountain_car_state_velovisual.py
 gym/envs/classic_control/continuous_mountain_car.py
+gym/envs/classic_control/continuous_mountain_car_state_velovisual.py
 gym/envs/classic_control/mountain_car.py
+gym/envs/classic_control/mountain_carJinghua.py
+gym/envs/classic_control/mountain_carJinghua_original.py
+gym/envs/classic_control/mountain_car_state_velovisual.py
 gym/envs/classic_control/pendulum.py
 gym/envs/classic_control/rendering.py
 gym/envs/classic_control/assets/clockwise.png
@@ -138,6 +144,7 @@ gym/envs/tests/spec_list.py
 gym/envs/tests/test_determinism.py
 gym/envs/tests/test_envs.py
 gym/envs/tests/test_envs_semantics.py
+gym/envs/tests/test_mountain_car_continuous_action.py
 gym/envs/tests/test_registration.py
 gym/envs/toy_text/__init__.py
 gym/envs/toy_text/blackjack.py

@@ -1,9 +1,12 @@
+import numpy as np
+import matplotlib.pyplot as plt
+'''
 import time
 import gym
-import numpy as np
+
 import tensorflow as tf
 from gym.spaces import Discrete, Box
-import matplotlib.pyplot as plt
+
 from stable_baselines import logger
 from stable_baselines.a2c.utils import batch_to_seq, seq_to_batch, Scheduler, find_trainable_variables, EpisodeStats, \
     get_by_index, check_shape, avg_norm, gradient_add, q_explained_variance, total_episode_reward_logger
@@ -11,6 +14,7 @@ from stable_baselines.acer.buffer import Buffer
 from stable_baselines.common import ActorCriticRLModel, tf_util, SetVerbosity, TensorboardWriter
 from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
+'''
 
 def plot_network_activation_dqn(layer_behaviour, behaviour, trialtype_log, save_path, title):
     # TODO plot activations for last example for beaconed, probe and non beaconed
@@ -66,9 +70,17 @@ def plot_network_activation(layer_behaviour, behaviour, trialtype_log, save_path
     last_trial_layers = np.array(layer_behaviour[-1])
 
     fig_l1, ax_l1 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    plt.xlabel("common X")
+    plt.ylabel("common Y")
     fig_l2, ax_l2 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    plt.xlabel("common X")
+    plt.ylabel("common Y")
     fig_l3, ax_l3 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    plt.xlabel("common X")
+    plt.ylabel("common Y")
     fig_l4, ax_l4 = plt.subplots(8, 8, sharex=True, sharey=True, figsize=(20, 20))
+    plt.xlabel("common X")
+    plt.ylabel("common Y")
 
     x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
 
@@ -83,10 +95,16 @@ def plot_network_activation(layer_behaviour, behaviour, trialtype_log, save_path
             ax_l4[i, j].scatter(pos, activations[:, 3])
             count += 1
 
-            ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
-            ax_l2[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
-            ax_l3[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
-            ax_l4[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+            if j==0:
+                ax_l1[i, j].set(ylabel= "Unit activation")
+                ax_l2[i, j].set(ylabel= "Unit activation")
+                ax_l3[i, j].set(ylabel= "Unit activation")
+                ax_l4[i, j].set(ylabel= "Unit activation")
+            if i==7:
+                ax_l1[i, j].set(xlabel = 'Track Position')
+                ax_l2[i, j].set(xlabel = 'Track Position')
+                ax_l3[i, j].set(xlabel = 'Track Position')
+                ax_l4[i, j].set(xlabel = 'Track Position')
 
             ax_l1[i, j].set_xlim([-0.6, 1])  # track limits
             ax_l2[i, j].set_xlim([-0.6, 1])  # track limits
@@ -142,8 +160,14 @@ def plot_network_activation_rnn(layer_behaviour, behaviour, trialtype_log, save_
             activations = last_trial_layers[:, :, :, count]
 
             ax_l1[i, j].scatter(pos, activations[:, 0])
-            ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
-            ax_l1[i, j].set_xlim([-0.6, 1])  # track limits
+
+            if j==0:
+                ax_l1[i, j].set(ylabel= "Unit activation")
+            if i==15:
+                ax_l1[i, j].set(xlabel = 'Track Position')
+
+            #ax_l1[i, j].set(xlabel='Track Position', ylabel= "Unit activation")
+            ax_l1[i, j].set_xlim([0, 1])  # track limits
             ax_l1[i, j].fill(x, y, color="k", alpha=0.2)
             ax_l1[i, j].set_ylim([-1.1, 1.1])  # track limits
 
@@ -151,6 +175,70 @@ def plot_network_activation_rnn(layer_behaviour, behaviour, trialtype_log, save_
     fig_l1.tight_layout()
     fig_l1.savefig(save_path + title + "l1_pn")
     fig_l1.clf()
+
+def plot_rasta_test(ep_log, save_path, title):
+    # for looking at behaviour of agent within learning env not evaluation env
+    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+
+    info_ = []
+    dones_ = []
+
+    for i in ep_log:
+        info_.append(i[0])
+        dones_.append(i[1])
+
+    info = [val for sublist in info_ for val in sublist]
+    dones = [val for sublist in dones_ for val in sublist]
+
+    ep_log = []
+
+    counter = 0
+    ep = []
+    for i in dones:
+        ep.append(info[counter])
+        counter+=1
+
+        if i == True:
+            ep_log.append(ep)
+            ep = []
+
+    raster_test(ep_log, ax1)
+    f.tight_layout()
+    f.savefig(save_path + title)
+    f.clf()
+
+def raster_test(behaviour, ax=None):
+
+    # [episode[timestep[action, rew, obs, float(done), state]]]   obs = [position velocity]
+    no_trials = len(behaviour)
+    all_trial_stopping = []    # initialise empty list
+
+    # changes structure so behaviour is organised by trial
+    for trial in behaviour:
+        trial = np.array(trial)
+
+        v = trial[:, 1] # vector of states per time step in trial (velocity)
+        pos = trial[:, 0] # vector of positions
+
+        idx = np.array(np.round(np.array(v), decimals=3) == 0.0)  # vector of boolean per time step showing v = 0
+
+        all_trial_stopping.append(pos[idx])  # appendable list of positions for which v = 0
+        #print(pos[idx], "=pos[idx]")
+
+    #plt.title(title)
+    ax.set(xlabel='Track Position', ylabel='Trial')
+
+    x = [0.4, 0.6, 0.6, 0.4]  # setting fill area for reward zone
+    y = [1, 1, no_trials, no_trials]
+    ax.fill(x, y, color="k", alpha=0.2)
+
+    ax.set_ylim([1, no_trials])
+    ax.set_xlim([-0.6, 1])  # track limits
+
+    # Draw a spike raster plot
+    return ax.eventplot(all_trial_stopping, linewidths=5)
+
+
 
 def plot_summary_with_fn(behaviour, values, trialtype_log, save_path, title):
 

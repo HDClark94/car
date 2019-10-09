@@ -16,7 +16,6 @@ from stable_baselines.common.mpi_moments import mpi_moments
 from stable_baselines.trpo_mpi.utils import traj_segment_generator, add_vtarg_and_adv, flatten_lists
 from stable_baselines.a2c.utils import total_episode_reward_logger
 from stable_baselines.common.evaluate_policy import *
-import gym
 
 class PPO1(ActorCriticRLModel):
     """
@@ -89,6 +88,9 @@ class PPO1(ActorCriticRLModel):
         self.action_log = []
         self.value_log = []
         self.trialtype_log = []
+
+        self.funky1=[]
+        self.funky2=[]
 
         if _init_setup_model:
             self.setup_model()
@@ -345,6 +347,15 @@ class PPO1(ActorCriticRLModel):
                     if self.verbose >= 1 and MPI.COMM_WORLD.Get_rank() == 0:
                         logger.dump_tabular()
 
+                    #self.eval_steps.append(timesteps_so_far)
+                    #[episode[timestep[action, rew, obs, float(done), state]]]
+
+                    #self.ep_rews.append(ep_rew)
+                    #self.layer_log.append(layer_log)
+                    #self.action_log.append(action_log)
+                    #self.value_log.append(value_log)
+                    #self.trialtype_log.append(trialtype)
+
                     if eval_env_string is not None:
                         ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy(self, eval_env,
                                                                                                       seed=seed)
@@ -356,7 +367,9 @@ class PPO1(ActorCriticRLModel):
                         self.value_log.append(value_log)
                         self.trialtype_log.append(trialtype)
 
+
         return self
+
 
     def save(self, save_path):
         data = {

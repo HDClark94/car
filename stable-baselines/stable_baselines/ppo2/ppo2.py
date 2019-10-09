@@ -13,6 +13,9 @@ from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import ActorCriticPolicy, RecurrentActorCriticPolicy
 from stable_baselines.a2c.utils import total_episode_reward_logger
 
+from stable_baselines.common.evaluate_policy import *
+from stable_baselines.common.evaluate_policy_vecenv import *
+from stable_baselines.common.vec_env import DummyVecEnv
 
 class PPO2(ActorCriticRLModel):
     """
@@ -50,7 +53,7 @@ class PPO2(ActorCriticRLModel):
     def __init__(self, policy, env, gamma=0.99, n_steps=128, ent_coef=0.01, learning_rate=2.5e-4, vf_coef=0.5,
                  max_grad_norm=0.5, lam=0.95, nminibatches=4, noptepochs=4, cliprange=0.2, cliprange_vf=None,
                  verbose=0, tensorboard_log=None, _init_setup_model=True, policy_kwargs=None,
-                 full_tensorboard_log=False):
+                 full_tensorboard_log=False, action_error_std=0):
 
         super(PPO2, self).__init__(policy=policy, env=env, verbose=verbose, requires_vec_env=True,
                                    _init_setup_model=_init_setup_model, policy_kwargs=policy_kwargs)
@@ -95,6 +98,16 @@ class PPO2(ActorCriticRLModel):
         self.n_batch = None
         self.summary = None
         self.episode_reward = None
+
+        self.action_error_std = action_error_std
+
+        self.ep_logs = []
+        self.ep_rews = []
+        self.eval_steps = []
+        self.layer_log = []
+        self.action_log = []
+        self.value_log = []
+        self.trialtype_log = []
 
         if _init_setup_model:
             self.setup_model()
@@ -303,7 +316,14 @@ class PPO2(ActorCriticRLModel):
         return policy_loss, value_loss, policy_entropy, approxkl, clipfrac
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=1, tb_log_name="PPO2",
-              reset_num_timesteps=True):
+              reset_num_timesteps=True,  eval_env_string=None):
+
+        if eval_env_string is not None:
+            eval_env = gym.make(eval_env_string)
+            eval_env.set_obs_error(self.action_error_std)
+            # eval_env = SubprocVecEnv([lambda: eval_env for i in range(4)])
+            eval_env = DummyVecEnv([lambda: eval_env])
+
         # Transform to callable if needed
         self.learning_rate = get_schedule_fn(self.learning_rate)
         self.cliprange = get_schedule_fn(self.cliprange)
@@ -399,6 +419,17 @@ class PPO2(ActorCriticRLModel):
                     if callback(locals(), globals()) is False:
                         break
 
+                if eval_env_string is not None:
+                    ep_log, ep_rew, layer_log, action_log, value_log, trialtype = evaluate_policy_vecenv(self, eval_env,
+                                                                                                  seed=seed)
+                    self.eval_steps.append(update)
+                    self.ep_logs.append(ep_log)
+                    self.ep_rews.append(ep_rew)
+                    self.layer_log.append(layer_log)
+                    self.action_log.append(action_log)
+                    self.value_log.append(value_log)
+                    self.trialtype_log.append(trialtype)
+
             return self
 
     def save(self, save_path):
@@ -461,8 +492,9 @@ class Runner(AbstractEnvRunner):
         mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [], [], [], [], [], []
         mb_states = self.states
         ep_infos = []
+
         for _ in range(self.n_steps):
-            actions, values, self.states, neglogpacs = self.model.step(self.obs, self.states, self.dones)
+            actions, values, self.states, neglogpacs, layers_list = self.model.step(self.obs, self.states, self.dones)
             mb_obs.append(self.obs.copy())
             mb_actions.append(actions)
             mb_values.append(values)
@@ -473,11 +505,12 @@ class Runner(AbstractEnvRunner):
             if isinstance(self.env.action_space, gym.spaces.Box):
                 clipped_actions = np.clip(actions, self.env.action_space.low, self.env.action_space.high)
             self.obs[:], rewards, self.dones, infos = self.env.step(clipped_actions)
-            for info in infos:
-                maybe_ep_info = info.get('episode')
-                if maybe_ep_info is not None:
-                    ep_infos.append(maybe_ep_info)
+            #for info in infos:
+                #maybe_ep_info = info.get('episode')
+                #if maybe_ep_info is not None:
+                #    ep_infos.append(maybe_ep_info)
             mb_rewards.append(rewards)
+
         # batch of steps to batch of rollouts
         mb_obs = np.asarray(mb_obs, dtype=self.obs.dtype)
         mb_rewards = np.asarray(mb_rewards, dtype=np.float32)
@@ -508,7 +541,7 @@ class Runner(AbstractEnvRunner):
 
 
 def get_schedule_fn(value_schedule):
-    """
+    """ep_infos
     Transform (if needed) learning rate and clip range
     to callable.
 
