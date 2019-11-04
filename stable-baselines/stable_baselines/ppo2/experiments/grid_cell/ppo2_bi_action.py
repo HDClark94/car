@@ -14,7 +14,7 @@ plot_path = os.path.join(dir, 'figures', 'binary_action', '')
 
 action_errors = [0, 0.01, 0.1, 1]
 action_errors = [0]
-training_steps = 400000
+training_steps = 4000
 
 print("running PPO2")
 
@@ -22,7 +22,7 @@ print("running PPO2")
 # multiprocess environment
 policy = MlpLstmPolicy
 env_string = 'GC_MountainCar-v0'
-id = 0
+id = 300
 
 for std in action_errors:
 
