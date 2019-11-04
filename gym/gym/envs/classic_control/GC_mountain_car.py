@@ -61,8 +61,9 @@ class GC_MountainCarEnv(gym.Env):
         self.obsError = obsError
 
     def SetTrialType(self):
+
         self.trial_count += 1
-        if self.trial_count % 2 == 0:
+        if self.trial_count % 3 == 0:
             self.trialtype = "non_beaconed"
         else:
             self.trialtype = "beaconed"
@@ -71,7 +72,7 @@ class GC_MountainCarEnv(gym.Env):
 
         if position >= self.goal_position - (self.goal_width / 2) and position <= self.goal_position + (
                 self.goal_width / 2):
-            visual_input = 1
+            visual_input = 0
         else:
             visual_input = 0
 
