@@ -1,0 +1,14 @@
+venv/
+lib/
+bin/
+htmlcov/
+include/
+lib64/
+share/
+.pytest_cache/
+pyenvv.cfg
+.coverage
+.idea/
+.png
+.pkl
+.npy
