@@ -18,6 +18,10 @@
           <option name="url" value="http://github.com" />
           <option name="userName" value="HDClark94" />
         </UrlAndUserName>
+        <UrlAndUserName>
+          <option name="url" value="https://github.com/HDClark94/Elrond.git" />
+          <option name="userName" value="" />
+        </UrlAndUserName>
       </list>
     </option>
     <option name="cloneParentDir" value="C:\Users\44756\PycharmProjects" />
