@@ -1,0 +1,14 @@
+<application>
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="6aea078f-45b0-4145-9dd1-0b2b67ebd49e" name="Copy of project-level server 'Eleanor'" url="http://172.16.49.217">
+        <fileTransfer host="172.16.49.217" port="22" privateKey="C:\Users\44756\.ssh\id_rsa" accessType="SFTP" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</application>

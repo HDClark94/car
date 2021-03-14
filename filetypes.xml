@@ -1,0 +1,10 @@
+<application>
+  <component name="FileTypeManager" version="17">
+    <extensionMap>
+      <mapping pattern="*.js.flow" type="Flow" />
+      <mapping pattern="*.js.flow" type="Flow" />
+      <mapping pattern="SpikeInterface_runbook.py" type="PLAIN_TEXT" />
+      <mapping ext="rmd" type="PLAIN_TEXT" />
+    </extensionMap>
+  </component>
+</application>
