@@ -50,6 +50,10 @@
           <option name="url" value="https://github.com/HDClark94/Run2.git" />
           <option name="userName" value="" />
         </UrlAndUserName>
+        <UrlAndUserName>
+          <option name="url" value="https://github.com/HDClark94/TrenchRun.git" />
+          <option name="userName" value="" />
+        </UrlAndUserName>
       </list>
     </option>
     <option name="cloneParentDir" value="C:\Users\44756\PycharmProjects" />
